@@ -57,5 +57,7 @@ export interface PatternData {
     priceAction: string;
     keyLevel: string;
     riskLevel: string;
+    breakoutPrediction?: string;
+    keyLevels?: string[];
   };
 }

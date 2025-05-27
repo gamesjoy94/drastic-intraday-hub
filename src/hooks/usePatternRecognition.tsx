@@ -55,37 +55,75 @@ export const usePatternRecognition = () => {
 
   const generateMockPatternData = (currentPrice: number): PatternData => {
     const patterns = [
+      'Head & Shoulders',
+      'Inverse Head & Shoulders',
       'Ascending Triangle',
       'Descending Triangle', 
+      'Symmetrical Triangle',
       'Double Top',
       'Double Bottom',
-      'Flag Pattern',
-      'Consolidation',
-      'Bullish Flag',
-      'Bearish Flag'
+      'Bull Flag',
+      'Bear Flag',
+      'Pennant',
+      'Wedge Pattern',
+      'Rectangle Pattern'
     ];
     
-    const directions = ['BULLISH', 'BEARISH', 'NEUTRAL'];
-    const strengths = ['STRONG', 'MODERATE', 'WEAK'];
-    
     const pattern = patterns[Math.floor(Math.random() * patterns.length)];
-    const direction = pattern.includes('Bullish') || pattern.includes('Ascending') || pattern.includes('Double Bottom') 
-      ? 'BULLISH' 
-      : pattern.includes('Bearish') || pattern.includes('Descending') || pattern.includes('Double Top')
-      ? 'BEARISH'
-      : directions[Math.floor(Math.random() * directions.length)];
     
+    // Determine direction based on pattern type
+    let direction = 'NEUTRAL';
+    if (pattern.includes('Bull') || pattern.includes('Ascending') || pattern.includes('Inverse') || pattern.includes('Double Bottom')) {
+      direction = 'BULLISH';
+    } else if (pattern.includes('Bear') || pattern.includes('Descending') || pattern.includes('Head & Shoulders') || pattern.includes('Double Top')) {
+      direction = 'BEARISH';
+    } else {
+      direction = ['BULLISH', 'BEARISH', 'NEUTRAL'][Math.floor(Math.random() * 3)];
+    }
+    
+    const strengths = ['STRONG', 'MODERATE', 'WEAK'];
     const strength = strengths[Math.floor(Math.random() * strengths.length)];
-    const probability = Math.floor(Math.random() * 30) + 55; // 55-85%
     
-    const support = (currentPrice * (0.995 - Math.random() * 0.01)).toFixed(2);
-    const resistance = (currentPrice * (1.005 + Math.random() * 0.01)).toFixed(2);
+    // Adjust probability based on pattern type and strength
+    let baseProbability = 60;
+    if (pattern.includes('Head & Shoulders') || pattern.includes('Triangle')) baseProbability = 75;
+    if (pattern.includes('Double')) baseProbability = 70;
+    if (pattern.includes('Flag')) baseProbability = 65;
+    
+    const strengthModifier = strength === 'STRONG' ? 10 : strength === 'WEAK' ? -10 : 0;
+    const probability = Math.min(Math.max(baseProbability + strengthModifier + Math.floor(Math.random() * 15) - 7, 45), 90);
+    
+    const support = (currentPrice * (0.992 - Math.random() * 0.015)).toFixed(2);
+    const resistance = (currentPrice * (1.008 + Math.random() * 0.015)).toFixed(2);
     const pivot = ((parseFloat(support) + parseFloat(resistance) + currentPrice) / 3).toFixed(2);
     
     const breakoutLevel = direction === 'BULLISH' ? resistance : support;
+    const targetMultiplier = pattern.includes('Head & Shoulders') ? 0.025 : 0.015;
     const target = direction === 'BULLISH' 
-      ? (parseFloat(breakoutLevel) * 1.015).toFixed(2)
-      : (parseFloat(breakoutLevel) * 0.985).toFixed(2);
+      ? (parseFloat(breakoutLevel) * (1 + targetMultiplier)).toFixed(2)
+      : (parseFloat(breakoutLevel) * (1 - targetMultiplier)).toFixed(2);
+    
+    // Generate key levels
+    const keyLevels = [];
+    for (let i = 0; i < 3; i++) {
+      const level = currentPrice * (0.995 + Math.random() * 0.01);
+      keyLevels.push(`$${level.toFixed(2)}`);
+    }
+    
+    // Generate breakout prediction
+    const breakoutPredictions = {
+      'Head & Shoulders': 'Bearish breakdown below neckline expected',
+      'Inverse Head & Shoulders': 'Bullish breakout above neckline expected',
+      'Ascending Triangle': 'Bullish breakout above resistance expected',
+      'Descending Triangle': 'Bearish breakdown below support expected',
+      'Double Top': 'Bearish breakdown below support expected',
+      'Double Bottom': 'Bullish breakout above resistance expected',
+      'Bull Flag': 'Continuation of uptrend expected',
+      'Bear Flag': 'Continuation of downtrend expected'
+    };
+    
+    const breakoutPrediction = breakoutPredictions[pattern as keyof typeof breakoutPredictions] || 
+      `${direction.toLowerCase()} breakout expected`;
     
     return {
       pattern,
@@ -98,12 +136,14 @@ export const usePatternRecognition = () => {
       breakoutLevel,
       target,
       description: `${pattern} detected with ${direction.toLowerCase()} bias`,
-      analysis: `Pattern shows ${strength.toLowerCase()} ${direction.toLowerCase()} potential. Key level at $${breakoutLevel} with target around $${target}.`,
+      analysis: `${pattern} shows ${strength.toLowerCase()} ${direction.toLowerCase()} potential. ${breakoutPrediction}. Key level at $${breakoutLevel} with target around $${target}. Pattern reliability: ${probability}%.`,
       signals: {
-        volumeConfirmation: Math.random() > 0.5 ? 'CONFIRMED' : 'PENDING',
+        volumeConfirmation: Math.random() > 0.4 ? 'CONFIRMED' : 'PENDING',
         priceAction: direction,
         keyLevel: `$${breakoutLevel}`,
-        riskLevel: strength === 'STRONG' ? 'LOW' : strength === 'MODERATE' ? 'MEDIUM' : 'HIGH'
+        riskLevel: strength === 'STRONG' ? 'LOW' : strength === 'MODERATE' ? 'MEDIUM' : 'HIGH',
+        breakoutPrediction,
+        keyLevels
       }
     };
   };
