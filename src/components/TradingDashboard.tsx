@@ -25,7 +25,6 @@ const TradingDashboard = () => {
     analysisData,
     isAnalyzing,
     connectionError,
-    retryCount,
     handleAnalyzeMarket,
     handleRetryConnection
   } = useMarketAnalysis();
@@ -83,7 +82,6 @@ const TradingDashboard = () => {
             setPriceChange={setPriceChange}
             isAnalyzing={isAnalyzing}
             connectionError={connectionError}
-            retryCount={retryCount}
             onAnalyze={handleAnalyze}
           />
           

@@ -11,7 +11,6 @@ interface MainContentProps {
   setPriceChange: (change: number) => void;
   isAnalyzing: boolean;
   connectionError: boolean;
-  retryCount: number;
   onAnalyze: () => void;
 }
 
@@ -24,7 +23,6 @@ const MainContent = ({
   setPriceChange,
   isAnalyzing,
   connectionError,
-  retryCount,
   onAnalyze
 }: MainContentProps) => {
   return (
@@ -57,7 +55,7 @@ const MainContent = ({
           {isAnalyzing ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              {retryCount > 0 ? `Retrying... (${retryCount}/2)` : 'Analyzing with AI...'}
+              Analyzing with AI...
             </div>
           ) : connectionError ? (
             <div className="flex items-center justify-center gap-2">

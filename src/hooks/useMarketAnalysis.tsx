@@ -10,7 +10,6 @@ export const useMarketAnalysis = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [lastAnalysisTime, setLastAnalysisTime] = useState(0);
   const { toast } = useToast();
 
@@ -33,10 +32,10 @@ export const useMarketAnalysis = () => {
     return forexPairs[symbol] || symbol;
   };
 
-  const handleAnalyzeMarket = async (selectedSymbol: string, selectedTimeframe: string, isRetry = false) => {
+  const handleAnalyzeMarket = async (selectedSymbol: string, selectedTimeframe: string) => {
     // Rate limiting check
     const now = Date.now();
-    if (!isRetry && now - lastAnalysisTime < RATE_LIMIT_DELAY) {
+    if (now - lastAnalysisTime < RATE_LIMIT_DELAY) {
       const remainingTime = Math.ceil((RATE_LIMIT_DELAY - (now - lastAnalysisTime)) / 1000);
       toast({
         title: "Rate Limited",
@@ -48,11 +47,7 @@ export const useMarketAnalysis = () => {
 
     setIsAnalyzing(true);
     setConnectionError(false);
-    
-    if (!isRetry) {
-      setRetryCount(0);
-      setLastAnalysisTime(now);
-    }
+    setLastAnalysisTime(now);
     
     console.log(`Running Smart Momentum Scalping analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
@@ -85,7 +80,6 @@ export const useMarketAnalysis = () => {
       setTradePlan(data.tradePlan);
       setAnalysisData(data);
       setConnectionError(false);
-      setRetryCount(0);
 
       toast({
         title: "Smart Momentum Analysis Complete",
@@ -98,27 +92,17 @@ export const useMarketAnalysis = () => {
       
       const errorMessage = error.message || 'Unknown error';
       
-      // Don't auto-retry on rate limit errors
+      // Show appropriate error message without auto-retry
       if (errorMessage.includes('rate limit') || errorMessage.includes('API credits')) {
         toast({
           title: "API Rate Limit",
           description: "The market data API has reached its limit. Please wait a few minutes before trying again.",
           variant: "destructive",
         });
-      } else if (retryCount < 1) { // Reduced retry count to prevent rate limiting
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          handleAnalyzeMarket(selectedSymbol, selectedTimeframe, true);
-        }, 5000); // Increased delay between retries
-        
-        toast({
-          title: "Connection Issue",
-          description: `Retrying analysis... (${retryCount + 1}/2)`,
-        });
       } else {
         toast({
           title: "Connection Failed",
-          description: "Unable to connect to analysis service. Please check your connection and try again later.",
+          description: "Unable to connect to analysis service. Please check your connection and use the retry button to try again.",
           variant: "destructive",
         });
       }
@@ -128,8 +112,7 @@ export const useMarketAnalysis = () => {
   };
 
   const handleRetryConnection = (selectedSymbol: string, selectedTimeframe: string) => {
-    setRetryCount(0);
-    setLastAnalysisTime(0); // Reset rate limit
+    setLastAnalysisTime(0); // Reset rate limit for manual retry
     handleAnalyzeMarket(selectedSymbol, selectedTimeframe);
   };
 
@@ -142,7 +125,6 @@ export const useMarketAnalysis = () => {
     analysisData,
     isAnalyzing,
     connectionError,
-    retryCount,
     handleAnalyzeMarket,
     handleRetryConnection
   };
