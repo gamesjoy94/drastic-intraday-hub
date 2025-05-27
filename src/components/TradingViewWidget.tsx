@@ -28,17 +28,7 @@ const TradingViewWidget = ({
       // Clear existing content
       widgetRef.current.innerHTML = '';
       
-      // Create widget container with proper styling
-      const widgetContainer = document.createElement('div');
-      widgetContainer.className = 'tradingview-widget-container__widget';
-      widgetContainer.style.cssText = `
-        height: 100% !important;
-        width: 100% !important;
-        position: relative;
-        box-sizing: border-box;
-      `;
-
-      // Create script element
+      // Create the TradingView widget with a cleaner approach
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
       script.type = 'text/javascript';
@@ -46,25 +36,22 @@ const TradingViewWidget = ({
       
       const config = {
         autosize: true,
-        symbol: "FX:XAUUSD",
+        symbol: "OANDA:XAUUSD",
         interval: timeframe,
         timezone: "Etc/UTC",
         theme: "dark",
         style: "1",
         locale: "en",
         enable_publishing: false,
+        backgroundColor: "rgba(30, 41, 59, 1)",
+        gridColor: "rgba(71, 85, 105, 0.5)",
         withdateranges: true,
         hide_side_toolbar: false,
         allow_symbol_change: false,
         details: true,
-        hotlist: true,
-        calendar: true,
-        studies: [
-          "MASimple@tv-basicstudies"
-        ],
-        show_popup_button: true,
-        popup_width: "1000",
-        popup_height: "650",
+        hotlist: false,
+        calendar: false,
+        show_popup_button: false,
         support_host: "https://www.tradingview.com"
       };
 
@@ -72,8 +59,10 @@ const TradingViewWidget = ({
 
       script.onload = () => {
         console.log('TradingViewWidget: TradingView XAUUSD chart loaded successfully');
-        onLoadingChange(false);
-        onErrorChange(false);
+        setTimeout(() => {
+          onLoadingChange(false);
+          onErrorChange(false);
+        }, 2000);
       };
 
       script.onerror = (error) => {
@@ -82,17 +71,17 @@ const TradingViewWidget = ({
         onErrorChange(true);
       };
 
-      widgetContainer.appendChild(script);
-      widgetRef.current.appendChild(widgetContainer);
+      widgetRef.current.appendChild(script);
 
-      // Force layout recalculation after a short delay
-      setTimeout(() => {
-        if (widgetRef.current) {
-          widgetRef.current.style.display = 'none';
-          widgetRef.current.offsetHeight; // Force reflow
-          widgetRef.current.style.display = 'block';
-        }
-      }, 100);
+      // Set a fallback timeout to stop loading state
+      const fallbackTimeout = setTimeout(() => {
+        console.log('TradingViewWidget: Fallback timeout reached');
+        onLoadingChange(false);
+      }, 15000);
+
+      return () => {
+        clearTimeout(fallbackTimeout);
+      };
 
     } catch (error) {
       console.error('TradingViewWidget: Error creating TradingView widget:', error);
@@ -105,12 +94,12 @@ const TradingViewWidget = ({
     <div
       key={widgetKey}
       ref={widgetRef}
-      className="absolute inset-0 tradingview-widget-container"
+      className="tradingview-widget-container absolute inset-0"
       style={{ 
         height: '100%', 
         width: '100%',
         minHeight: '400px',
-        background: '#1e293b'
+        background: 'rgba(30, 41, 59, 1)'
       }}
     />
   );
