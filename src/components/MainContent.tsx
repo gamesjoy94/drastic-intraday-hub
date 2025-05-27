@@ -32,10 +32,8 @@ const MainContent = ({
           symbol={selectedSymbol}
           timeframe={selectedTimeframe}
           onPriceUpdate={(price, change) => {
-            if (currentPrice === 0) { // Only update if we don't have real data yet
-              setCurrentPrice(price);
-              setPriceChange(change);
-            }
+            setCurrentPrice(price);
+            setPriceChange(change);
           }}
         />
       </div>
@@ -49,21 +47,21 @@ const MainContent = ({
               ? 'bg-gray-600 cursor-not-allowed' 
               : connectionError
               ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg'
+              : 'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 hover:shadow-lg'
           }`}
         >
           {isAnalyzing ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Analyzing with AI...
+              Analyzing Gold Market...
             </div>
           ) : connectionError ? (
             <div className="flex items-center justify-center gap-2">
               <RefreshCw className="w-5 h-5" />
-              Reconnect & Analyze
+              Reconnect & Analyze Gold
             </div>
           ) : (
-            '🚀 Smart Momentum Scalping Analysis'
+            '🏆 Smart Gold Trading Analysis'
           )}
         </button>
       </div>

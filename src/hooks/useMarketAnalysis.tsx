@@ -16,22 +16,6 @@ export const useMarketAnalysis = () => {
   // Rate limiting: prevent too frequent API calls
   const RATE_LIMIT_DELAY = 10000; // 10 seconds between calls
 
-  const formatSymbolForAPI = (symbol: string) => {
-    // Convert forex pairs to API format
-    const forexPairs: { [key: string]: string } = {
-      'XAUUSD': 'XAU/USD',
-      'EURUSD': 'EUR/USD',
-      'GBPUSD': 'GBP/USD',
-      'USDJPY': 'USD/JPY',
-      'AUDUSD': 'AUD/USD',
-      'USDCAD': 'USD/CAD',
-      'USDCHF': 'USD/CHF',
-      'NZDUSD': 'NZD/USD'
-    };
-    
-    return forexPairs[symbol] || symbol;
-  };
-
   const handleAnalyzeMarket = async (selectedSymbol: string, selectedTimeframe: string) => {
     // Rate limiting check
     const now = Date.now();
@@ -49,11 +33,11 @@ export const useMarketAnalysis = () => {
     setConnectionError(false);
     setLastAnalysisTime(now);
     
-    console.log(`Running Smart Momentum Scalping analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
+    console.log(`Running Smart Gold Trading analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
-      // Format symbol for API
-      const apiSymbol = formatSymbolForAPI(selectedSymbol);
+      // Always use XAU/USD format for the API
+      const apiSymbol = 'XAU/USD';
       
       const { data, error } = await supabase.functions.invoke('analyze-market', {
         body: { 
@@ -82,12 +66,12 @@ export const useMarketAnalysis = () => {
       setConnectionError(false);
 
       toast({
-        title: "Smart Momentum Analysis Complete",
-        description: `AI-powered scalping analysis for ${selectedSymbol} completed with ${data.tradePlan?.confidence || 0}% confidence.`,
+        title: "Smart Gold Analysis Complete",
+        description: `AI-powered gold trading analysis completed with ${data.tradePlan?.confidence || 0}% confidence.`,
       });
 
     } catch (error) {
-      console.error('Smart Momentum Scalping analysis failed:', error);
+      console.error('Smart Gold Trading analysis failed:', error);
       setConnectionError(true);
       
       const errorMessage = error.message || 'Unknown error';
