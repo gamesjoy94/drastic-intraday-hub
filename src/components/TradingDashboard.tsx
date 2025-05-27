@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Navbar from './Navbar';
 import ConnectionErrorBanner from './ConnectionErrorBanner';
@@ -9,7 +8,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMarketAnalysis } from '@/hooks/useMarketAnalysis';
 
 const TradingDashboard = () => {
-  // Fixed to XAUUSD only
   const selectedSymbol = 'XAUUSD';
   const selectedTimeframe = '5min';
 
