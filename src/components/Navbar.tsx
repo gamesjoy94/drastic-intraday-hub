@@ -23,7 +23,7 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg lg:text-2xl font-bold text-yellow-400 truncate">
-                Gold Trading Pro
+                E.DRASTIC pro
               </h1>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 hidden sm:block">
