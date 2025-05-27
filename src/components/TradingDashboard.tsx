@@ -38,49 +38,56 @@ const TradingDashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
-      {/* Connection Error Banner */}
-      {connectionError && <ConnectionErrorBanner onRetry={handleRetry} />}
-      
-      <div className={`flex-1 flex flex-col min-w-0 ${connectionError ? 'mt-10' : ''}`}>
-        <Navbar 
-          selectedSymbol={selectedSymbol}
-          currentPrice={currentPrice}
-          priceChange={priceChange}
-        />
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Connection Error Banner - Only show when there's an error */}
+        {connectionError && (
+          <div className="relative z-50">
+            <ConnectionErrorBanner onRetry={handleRetry} />
+          </div>
+        )}
         
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* Main Chart Section */}
-          <MainContent
+        {/* Main content with proper spacing */}
+        <div className={`flex-1 flex flex-col ${connectionError ? 'pt-12' : ''}`}>
+          <Navbar 
             selectedSymbol={selectedSymbol}
-            selectedTimeframe={selectedTimeframe}
             currentPrice={currentPrice}
-            setCurrentPrice={setCurrentPrice}
             priceChange={priceChange}
-            setPriceChange={setPriceChange}
-            isAnalyzing={isAnalyzing}
-            connectionError={connectionError}
-            onAnalyze={handleAnalyze}
           />
           
-          {/* Right Panel - Desktop only */}
-          {!isMobile && (
-            <RightPanel
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+            {/* Main Chart Section */}
+            <MainContent
               selectedSymbol={selectedSymbol}
               selectedTimeframe={selectedTimeframe}
-              analysisData={analysisData}
-              tradePlan={tradePlan}
+              currentPrice={currentPrice}
+              setCurrentPrice={setCurrentPrice}
+              priceChange={priceChange}
+              setPriceChange={setPriceChange}
+              isAnalyzing={isAnalyzing}
+              connectionError={connectionError}
+              onAnalyze={handleAnalyze}
             />
-          )}
-          
-          {/* Mobile Bottom Sheet for Analysis */}
-          {isMobile && (
-            <MobileAnalysisSheet
-              selectedSymbol={selectedSymbol}
-              selectedTimeframe={selectedTimeframe}
-              analysisData={analysisData}
-              tradePlan={tradePlan}
-            />
-          )}
+            
+            {/* Right Panel - Desktop only */}
+            {!isMobile && (
+              <RightPanel
+                selectedSymbol={selectedSymbol}
+                selectedTimeframe={selectedTimeframe}
+                analysisData={analysisData}
+                tradePlan={tradePlan}
+              />
+            )}
+            
+            {/* Mobile Bottom Sheet for Analysis */}
+            {isMobile && (
+              <MobileAnalysisSheet
+                selectedSymbol={selectedSymbol}
+                selectedTimeframe={selectedTimeframe}
+                analysisData={analysisData}
+                tradePlan={tradePlan}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -148,25 +148,25 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
   };
 
   return (
-    <div className="flex-1 bg-slate-800 m-4 rounded-lg overflow-hidden">
-      {/* Live Price Banner */}
+    <div className="flex-1 bg-slate-800 m-2 lg:m-4 rounded-lg overflow-hidden">
+      {/* Live Price Banner - Fixed positioning to avoid overlaps */}
       {livePriceData && (
-        <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 p-3 border-b border-yellow-500">
+        <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 p-2 lg:p-3 border-b border-yellow-500 relative z-10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold">Live XAUUSD Feed</span>
+            <div className="flex items-center gap-2 lg:gap-3">
+              <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+              <span className="text-white font-semibold text-sm lg:text-base">Live XAUUSD Feed</span>
             </div>
-            <div className="flex items-center gap-4 text-white">
-              <span className="text-lg font-bold">
+            <div className="flex items-center gap-2 lg:gap-4 text-white">
+              <span className="text-base lg:text-lg font-bold">
                 ${livePriceData.price.toFixed(2)}
               </span>
-              <span className={`text-sm font-medium ${
+              <span className={`text-xs lg:text-sm font-medium ${
                 livePriceData.change >= 0 ? 'text-green-200' : 'text-red-200'
               }`}>
                 {livePriceData.change >= 0 ? '+' : ''}{livePriceData.change.toFixed(3)}%
               </span>
-              <span className="text-xs opacity-75">
+              <span className="text-xs opacity-75 hidden sm:inline">
                 {livePriceData.timestamp}
               </span>
             </div>
@@ -186,9 +186,9 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
         {/* Loading State */}
         {isLoading && !chartError && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <div className="text-slate-400">Loading XAUUSD Chart...</div>
+            <div className="text-center p-4">
+              <div className="w-8 h-8 lg:w-12 lg:h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="text-slate-400 text-sm lg:text-base">Loading XAUUSD Chart...</div>
               <div className="text-xs text-slate-500 mt-2">Gold/USD Live Trading Chart</div>
             </div>
           </div>
@@ -197,13 +197,13 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
         {/* Error State */}
         {chartError && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <div className="text-slate-400 mb-2">Failed to load XAUUSD chart</div>
+            <div className="text-center p-4">
+              <AlertCircle className="w-8 h-8 lg:w-12 lg:h-12 text-red-400 mx-auto mb-4" />
+              <div className="text-slate-400 mb-2 text-sm lg:text-base">Failed to load XAUUSD chart</div>
               <div className="text-xs text-slate-500 mb-4">Chart connection interrupted</div>
               <button
                 onClick={handleRetryChart}
-                className="flex items-center gap-2 mx-auto px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 mx-auto px-3 py-2 lg:px-4 lg:py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors text-sm lg:text-base"
               >
                 <RefreshCw className="w-4 h-4" />
                 Retry Chart

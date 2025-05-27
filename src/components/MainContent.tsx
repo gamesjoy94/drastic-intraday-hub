@@ -38,11 +38,12 @@ const MainContent = ({
         />
       </div>
       
-      <div className="p-3 lg:p-4 border-t border-slate-700">
+      {/* Fixed bottom button with better spacing */}
+      <div className="p-3 lg:p-4 border-t border-slate-700 bg-slate-900 relative z-10">
         <button
           onClick={onAnalyze}
           disabled={isAnalyzing}
-          className={`w-full py-3 px-4 lg:px-6 rounded-lg font-semibold text-base lg:text-lg transition-all duration-200 ${
+          className={`w-full py-2 lg:py-3 px-4 lg:px-6 rounded-lg font-semibold text-sm lg:text-lg transition-all duration-200 ${
             isAnalyzing 
               ? 'bg-gray-600 cursor-not-allowed' 
               : connectionError
@@ -52,16 +53,16 @@ const MainContent = ({
         >
           {isAnalyzing ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Analyzing Gold Market...
+              <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-xs lg:text-base">Analyzing Gold Market...</span>
             </div>
           ) : connectionError ? (
             <div className="flex items-center justify-center gap-2">
-              <RefreshCw className="w-5 h-5" />
-              Reconnect & Analyze Gold
+              <RefreshCw className="w-4 h-4 lg:w-5 lg:h-5" />
+              <span className="text-xs lg:text-base">Reconnect & Analyze Gold</span>
             </div>
           ) : (
-            '🏆 Smart Gold Trading Analysis'
+            <span className="text-xs lg:text-base">🏆 Smart Gold Trading Analysis</span>
           )}
         </button>
       </div>
