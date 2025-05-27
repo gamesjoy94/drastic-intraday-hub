@@ -27,8 +27,11 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
     setWidgetKey(prev => prev + 1);
     
     const loadTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 8000);
+      if (isLoading) {
+        console.log('ChartSection: Chart loading timeout, but keeping widget active');
+        setIsLoading(false);
+      }
+    }, 10000);
 
     return () => {
       clearTimeout(loadTimeout);
@@ -43,10 +46,10 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
   };
 
   return (
-    <div className="flex-1 bg-slate-800 m-2 lg:m-4 rounded-lg overflow-hidden">
+    <div className="flex-1 bg-slate-800 m-2 lg:m-4 rounded-lg overflow-hidden min-h-0">
       <LivePriceBanner livePriceData={livePriceData} />
 
-      <div className="h-full relative">
+      <div className="h-full relative min-h-[400px]" style={{ height: 'calc(100% - 60px)' }}>
         <TradingViewWidget
           timeframe={timeframe}
           widgetKey={widgetKey}

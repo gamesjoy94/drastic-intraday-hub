@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface TradingViewWidgetProps {
   timeframe: string;
@@ -28,11 +28,15 @@ const TradingViewWidget = ({
       // Clear existing content
       widgetRef.current.innerHTML = '';
       
-      // Create widget container
+      // Create widget container with proper styling
       const widgetContainer = document.createElement('div');
       widgetContainer.className = 'tradingview-widget-container__widget';
-      widgetContainer.style.height = '100%';
-      widgetContainer.style.width = '100%';
+      widgetContainer.style.cssText = `
+        height: 100% !important;
+        width: 100% !important;
+        position: relative;
+        box-sizing: border-box;
+      `;
 
       // Create script element
       const script = document.createElement('script');
@@ -55,6 +59,12 @@ const TradingViewWidget = ({
         details: true,
         hotlist: true,
         calendar: true,
+        studies: [
+          "MASimple@tv-basicstudies"
+        ],
+        show_popup_button: true,
+        popup_width: "1000",
+        popup_height: "650",
         support_host: "https://www.tradingview.com"
       };
 
@@ -75,6 +85,15 @@ const TradingViewWidget = ({
       widgetContainer.appendChild(script);
       widgetRef.current.appendChild(widgetContainer);
 
+      // Force layout recalculation after a short delay
+      setTimeout(() => {
+        if (widgetRef.current) {
+          widgetRef.current.style.display = 'none';
+          widgetRef.current.offsetHeight; // Force reflow
+          widgetRef.current.style.display = 'block';
+        }
+      }, 100);
+
     } catch (error) {
       console.error('TradingViewWidget: Error creating TradingView widget:', error);
       onLoadingChange(false);
@@ -87,7 +106,12 @@ const TradingViewWidget = ({
       key={widgetKey}
       ref={widgetRef}
       className="absolute inset-0 tradingview-widget-container"
-      style={{ height: '100%', width: '100%' }}
+      style={{ 
+        height: '100%', 
+        width: '100%',
+        minHeight: '400px',
+        background: '#1e293b'
+      }}
     />
   );
 };
