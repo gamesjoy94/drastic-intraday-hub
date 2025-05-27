@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +18,8 @@ interface PatternData {
     priceAction: string;
     keyLevel: string;
     riskLevel: string;
+    breakoutPrediction?: string;
+    keyLevels?: string[];
   };
 }
 
