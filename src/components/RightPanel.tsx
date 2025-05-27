@@ -55,11 +55,11 @@ const RightPanel = ({ selectedSymbol, selectedTimeframe, analysisData, tradePlan
         <AnalysisPanel
           symbol={selectedSymbol}
           timeframe={selectedTimeframe}
-          data={analysisData}
+          analysisData={analysisData}
         />
         
         {/* Trade Plan */}
-        <TradePlan data={tradePlan} />
+        <TradePlan tradePlan={tradePlan} />
       </div>
     </div>
   );
