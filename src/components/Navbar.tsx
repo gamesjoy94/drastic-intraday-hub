@@ -12,9 +12,9 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
   const currentTime = new Date().toLocaleTimeString();
   
   return (
-    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4 shadow-lg relative z-20">
+    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4 shadow-lg relative z-30">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 lg:gap-6 min-w-0">
+        <div className="flex items-center gap-3 lg:gap-6 min-w-0 mobile-safe-left">
           {/* Professional Logo with Initials */}
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg p-2 lg:p-3 shadow-lg">
@@ -62,7 +62,7 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 lg:gap-4">
+        <div className="flex items-center gap-2 lg:gap-4 mobile-safe-right">
           {/* Mobile motto */}
           <div className="md:hidden flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
             <Zap className="w-3 h-3" />
