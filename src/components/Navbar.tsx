@@ -1,5 +1,5 @@
 
-import { Clock } from 'lucide-react';
+import { Clock, Menu } from 'lucide-react';
 
 interface NavbarProps {
   selectedSymbol: string;
@@ -11,19 +11,19 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
   const currentTime = new Date().toLocaleTimeString();
   
   return (
-    <nav className="bg-slate-800 border-b border-slate-700 px-6 py-4">
+    <nav className="bg-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-blue-400">TradingAI Pro</h1>
+        <div className="flex items-center gap-3 lg:gap-6 min-w-0">
+          <h1 className="text-lg lg:text-2xl font-bold text-blue-400 truncate">TradingAI Pro</h1>
           
-          <div className="flex items-center gap-4">
-            <div className="text-lg font-semibold">{selectedSymbol}</div>
+          <div className="flex items-center gap-2 lg:gap-4 min-w-0">
+            <div className="text-base lg:text-lg font-semibold">{selectedSymbol}</div>
             {currentPrice > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">
+              <div className="flex items-center gap-1 lg:gap-2 min-w-0">
+                <span className="text-lg lg:text-2xl font-bold truncate">
                   ${currentPrice.toFixed(2)}
                 </span>
-                <span className={`text-sm font-medium ${
+                <span className={`text-xs lg:text-sm font-medium ${
                   priceChange >= 0 ? 'text-green-400' : 'text-red-400'
                 }`}>
                   {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
@@ -33,15 +33,15 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <div className="hidden sm:flex items-center gap-2 text-slate-400">
             <Clock className="w-4 h-4" />
-            <span className="text-sm">{currentTime}</span>
+            <span className="text-xs lg:text-sm">{currentTime}</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-400">Live Market</span>
+          <div className="flex items-center gap-1 lg:gap-2">
+            <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs lg:text-sm text-green-400 hidden sm:inline">Live Market</span>
           </div>
         </div>
       </div>
