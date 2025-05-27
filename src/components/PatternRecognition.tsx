@@ -1,5 +1,5 @@
 
-import { TrendingUp, TrendingDown, Target, AlertTriangle, BarChart3, Flag } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, AlertTriangle, BarChart3, Flag, Activity, DollarSign, TrendingUp as CorrelationIcon } from 'lucide-react';
 
 interface PatternRecognitionProps {
   patternData: any;
@@ -33,6 +33,21 @@ const PatternRecognition = ({ patternData }: PatternRecognitionProps) => {
       case 'BEARISH': return 'text-red-400';
       default: return 'text-yellow-400';
     }
+  };
+
+  const getVolatilityColor = (percentile: string) => {
+    switch (percentile) {
+      case 'LOW': return 'text-green-400';
+      case 'HIGH': return 'text-red-400';
+      default: return 'text-yellow-400';
+    }
+  };
+
+  const getCorrelationColor = (value: number) => {
+    const abs = Math.abs(value);
+    if (abs > 0.6) return 'text-green-400'; // Strong correlation
+    if (abs > 0.3) return 'text-yellow-400'; // Moderate correlation
+    return 'text-red-400'; // Weak correlation
   };
 
   const getPatternIcon = (pattern: string) => {
@@ -72,6 +87,114 @@ const PatternRecognition = ({ patternData }: PatternRecognitionProps) => {
             <span className="text-white font-semibold text-sm">{patternData.probability}%</span>
           </div>
         </div>
+
+        {/* Real-time Volatility */}
+        {patternData.volatility && (
+          <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+            <h4 className="font-semibold mb-3 text-slate-200 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Real-time Volatility
+            </h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Current Volatility</span>
+                <span className={`font-semibold ${getVolatilityColor(patternData.volatility.percentile)}`}>
+                  {patternData.volatility.current.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Average Volatility</span>
+                <span className="text-slate-300 font-semibold">{patternData.volatility.average.toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Volatility Level</span>
+                <span className={`text-sm font-semibold ${getVolatilityColor(patternData.volatility.percentile)}`}>
+                  {patternData.volatility.percentile}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Trend</span>
+                <span className="text-slate-300 font-semibold text-sm">{patternData.volatility.trend}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Risk/Reward & Position Sizing */}
+        {patternData.riskMetrics && (
+          <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+            <h4 className="font-semibold mb-3 text-slate-200 flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Risk Management
+            </h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Risk/Reward Ratio</span>
+                <span className="text-green-400 font-semibold">1:{patternData.riskMetrics.riskRewardRatio}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Position Size</span>
+                <span className="text-blue-400 font-semibold">{patternData.riskMetrics.positionSize}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Max Risk</span>
+                <span className="text-red-400 font-semibold">{patternData.riskMetrics.maxRisk}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Stop Distance</span>
+                <span className="text-orange-400 font-semibold">{patternData.riskMetrics.stopLossDistance}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Target Distance</span>
+                <span className="text-purple-400 font-semibold">{patternData.riskMetrics.takeProfitDistance}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Asset Correlations */}
+        {patternData.correlation && (
+          <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+            <h4 className="font-semibold mb-3 text-slate-200 flex items-center gap-2">
+              <CorrelationIcon className="w-4 h-4" />
+              Asset Correlations
+            </h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Gold/Silver</span>
+                <span className={`font-semibold ${getCorrelationColor(patternData.correlation.goldSilverCorr)}`}>
+                  {patternData.correlation.goldSilverCorr.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Gold/USD (DXY)</span>
+                <span className={`font-semibold ${getCorrelationColor(patternData.correlation.goldDxyCorr)}`}>
+                  {patternData.correlation.goldDxyCorr.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Gold/S&P 500</span>
+                <span className={`font-semibold ${getCorrelationColor(patternData.correlation.goldSpyCorr)}`}>
+                  {patternData.correlation.goldSpyCorr.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Gold/Bonds</span>
+                <span className={`font-semibold ${getCorrelationColor(patternData.correlation.goldBondCorr)}`}>
+                  {patternData.correlation.goldBondCorr.toFixed(2)}
+                </span>
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-600">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">Correlation Signal</span>
+                  <span className={`text-sm font-semibold ${getDirectionColor(patternData.correlation.correlationSignal)}`}>
+                    {patternData.correlation.correlationSignal}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Support & Resistance Levels */}
         <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
@@ -170,25 +293,24 @@ const PatternRecognition = ({ patternData }: PatternRecognitionProps) => {
           </p>
         </div>
 
-        {/* Pattern Recognition Info */}
+        {/* Enhanced Info Cards */}
         <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
           <div className="text-blue-400 text-xs font-medium mb-1 flex items-center gap-1">
             <Target className="w-3 h-3" />
-            Advanced Pattern Detection
+            Advanced Trading Analytics
           </div>
           <div className="text-blue-300 text-xs">
-            Analyzing Head & Shoulders, Double Tops/Bottoms, Triangles, Flags, and more
+            Real-time volatility, position sizing, risk/reward ratios, and correlation analysis
           </div>
         </div>
 
-        {/* Risk Warning */}
         <div className="bg-orange-900/20 border border-orange-600/30 rounded-lg p-3">
           <div className="text-orange-400 text-xs font-medium mb-1 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            Pattern Risk Assessment
+            Risk Management Warning
           </div>
           <div className="text-orange-300 text-xs">
-            Pattern has {100 - patternData.probability}% failure rate. Use proper risk management and volume confirmation.
+            Intraday trading involves substantial risk. Use proper position sizing and stop losses. Current volatility: {patternData.volatility?.percentile || 'MEDIUM'}.
           </div>
         </div>
       </div>

@@ -52,6 +52,26 @@ export interface PatternData {
   target: string;
   description: string;
   analysis: string;
+  volatility: {
+    current: number;
+    average: number;
+    percentile: string;
+    trend: string;
+  };
+  riskMetrics: {
+    riskRewardRatio: string;
+    positionSize: string;
+    maxRisk: string;
+    stopLossDistance: string;
+    takeProfitDistance: string;
+  };
+  correlation: {
+    goldSilverCorr: number;
+    goldDxyCorr: number;
+    goldSpyCorr: number;
+    goldBondCorr: number;
+    correlationSignal: string;
+  };
   signals: {
     volumeConfirmation: string;
     priceAction: string;
