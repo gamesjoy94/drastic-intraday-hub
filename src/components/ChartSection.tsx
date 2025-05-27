@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { AlertCircle, RefreshCw, TrendingUp } from 'lucide-react';
 
 interface ChartSectionProps {
@@ -20,54 +20,64 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
     timestamp: string;
   } | null>(null);
 
-  // Enhanced live price simulation for XAUUSD with more realistic movements
+  // Memoize the price update callback to prevent dependency changes
+  const updatePriceCallback = useCallback((price: number, change: number) => {
+    onPriceUpdate(price, change);
+  }, [onPriceUpdate]);
+
+  // Enhanced live price simulation for XAUUSD with stable dependencies
   useEffect(() => {
-    let basePrice = 2650; // Typical XAUUSD price range
+    let basePrice = 2650;
     let lastPrice = basePrice;
+    let isMounted = true;
     
     const updatePrice = () => {
-      // More realistic gold price movements (smaller, more frequent changes)
-      const volatility = 0.0008; // 0.08% max change per update
+      if (!isMounted) return;
+      
+      // More realistic gold price movements
+      const volatility = 0.0008;
       const randomChange = (Math.random() - 0.5) * volatility;
       const newPrice = lastPrice * (1 + randomChange);
       
-      // Add some momentum (trending behavior)
+      // Add some momentum
       const momentum = Math.sin(Date.now() / 100000) * 0.0002;
       const finalPrice = newPrice * (1 + momentum);
       
       const priceChange = ((finalPrice - basePrice) / basePrice) * 100;
       
-      setLivePriceData({
+      const newPriceData = {
         price: finalPrice,
         change: priceChange,
         timestamp: new Date().toLocaleTimeString()
-      });
+      };
       
-      onPriceUpdate(finalPrice, priceChange);
+      setLivePriceData(newPriceData);
+      updatePriceCallback(finalPrice, priceChange);
       lastPrice = finalPrice;
     };
 
-    // Update price every 2 seconds for more live feel
-    updatePrice(); // Initial update
+    // Initial update
+    updatePrice();
+    
+    // Set up interval
     const interval = setInterval(updatePrice, 2000);
 
-    return () => clearInterval(interval);
-  }, [onPriceUpdate]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [updatePriceCallback]); // Stable dependency
 
   useEffect(() => {
     console.log('ChartSection: Loading XAUUSD chart');
     setIsLoading(true);
     setChartError(false);
     
-    // Force re-render of widget container by changing key
+    // Force re-render of widget container
     setWidgetKey(prev => prev + 1);
     
     const loadTimeout = setTimeout(() => {
-      if (isLoading) {
-        console.log('ChartSection: Widget load timeout');
-        setIsLoading(false);
-        setChartError(false); // Don't show error for timeout, just stop loading
-      }
+      setIsLoading(false);
     }, 8000);
 
     return () => {
@@ -84,6 +94,9 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
     }
 
     try {
+      // Clear existing content
+      widgetRef.current.innerHTML = '';
+      
       // Create widget container
       const widgetContainer = document.createElement('div');
       widgetContainer.className = 'tradingview-widget-container__widget';
@@ -98,7 +111,7 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
       
       const config = {
         autosize: true,
-        symbol: "FX:XAUUSD", // Explicit XAUUSD symbol
+        symbol: "FX:XAUUSD",
         interval: timeframe,
         timezone: "Etc/UTC",
         theme: "dark",
@@ -107,7 +120,7 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
         enable_publishing: false,
         withdateranges: true,
         hide_side_toolbar: false,
-        allow_symbol_change: false, // Prevent changing from XAUUSD
+        allow_symbol_change: false,
         details: true,
         hotlist: true,
         calendar: true,
@@ -128,8 +141,6 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
         setChartError(true);
       };
 
-      // Clear and append new content
-      widgetRef.current.innerHTML = '';
       widgetContainer.appendChild(script);
       widgetRef.current.appendChild(widgetContainer);
 
@@ -149,7 +160,7 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
 
   return (
     <div className="flex-1 bg-slate-800 m-2 lg:m-4 rounded-lg overflow-hidden">
-      {/* Live Price Banner - Fixed positioning to avoid overlaps */}
+      {/* Live Price Banner */}
       {livePriceData && (
         <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 p-2 lg:p-3 border-b border-yellow-500 relative z-10">
           <div className="flex items-center justify-between">
