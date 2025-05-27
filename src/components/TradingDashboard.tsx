@@ -18,6 +18,7 @@ const TradingDashboard = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [priceChange, setPriceChange] = useState(0);
   const [tradePlan, setTradePlan] = useState(null);
+  const [analysisData, setAnalysisData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
@@ -25,7 +26,7 @@ const TradingDashboard = () => {
 
   const handleAnalyzeMarket = async () => {
     setIsAnalyzing(true);
-    console.log(`Analyzing ${selectedSymbol} on ${selectedTimeframe} timeframe`);
+    console.log(`Running Smart Momentum Scalping analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
       const { data, error } = await supabase.functions.invoke('analyze-market', {
@@ -43,18 +44,19 @@ const TradingDashboard = () => {
         throw new Error(data.error);
       }
 
-      // Update current price from real data
+      // Update state with real analysis data
       setCurrentPrice(data.currentPrice);
       setPriceChange(data.priceChange);
       setTradePlan(data.tradePlan);
+      setAnalysisData(data);
 
       toast({
-        title: "Analysis Complete",
-        description: `Market analysis for ${selectedSymbol} completed successfully.`,
+        title: "Smart Momentum Analysis Complete",
+        description: `AI-powered scalping analysis for ${selectedSymbol} completed with ${data.tradePlan?.confidence || 0}% confidence.`,
       });
 
     } catch (error) {
-      console.error('Analysis failed:', error);
+      console.error('Smart Momentum Scalping analysis failed:', error);
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze market data. Please try again.",
@@ -124,16 +126,16 @@ const TradingDashboard = () => {
                 className={`w-full py-3 px-4 lg:px-6 rounded-lg font-semibold text-base lg:text-lg transition-all duration-200 ${
                   isAnalyzing 
                     ? 'bg-gray-600 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg'
                 }`}
               >
                 {isAnalyzing ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Analyzing Market...
+                    Analyzing with AI...
                   </div>
                 ) : (
-                  'Analyze Market'
+                  '🚀 Smart Momentum Scalping Analysis'
                 )}
               </button>
             </div>
@@ -143,7 +145,11 @@ const TradingDashboard = () => {
           <div className={`${isMobile ? 'hidden' : 'w-80 lg:w-96'} flex flex-col border-l border-slate-700 bg-slate-900`}>
             <div className="flex-1 overflow-y-auto">
               <MarketData symbol={selectedSymbol} />
-              <AnalysisPanel symbol={selectedSymbol} timeframe={selectedTimeframe} />
+              <AnalysisPanel 
+                symbol={selectedSymbol} 
+                timeframe={selectedTimeframe}
+                analysisData={analysisData}
+              />
               <TradePlan tradePlan={tradePlan} />
             </div>
           </div>
@@ -152,14 +158,18 @@ const TradingDashboard = () => {
           {isMobile && (
             <Sheet>
               <SheetTrigger asChild>
-                <button className="fixed bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg z-40">
+                <button className="fixed bottom-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 rounded-full shadow-lg z-40">
                   <Menu className="w-6 h-6" />
                 </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="h-[70vh] bg-slate-900 border-slate-700">
                 <div className="overflow-y-auto h-full">
                   <MarketData symbol={selectedSymbol} />
-                  <AnalysisPanel symbol={selectedSymbol} timeframe={selectedTimeframe} />
+                  <AnalysisPanel 
+                    symbol={selectedSymbol} 
+                    timeframe={selectedTimeframe}
+                    analysisData={analysisData}
+                  />
                   <TradePlan tradePlan={tradePlan} />
                 </div>
               </SheetContent>

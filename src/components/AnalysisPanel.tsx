@@ -4,72 +4,114 @@ import { useEffect, useState } from 'react';
 interface AnalysisPanelProps {
   symbol: string;
   timeframe: string;
+  analysisData?: any;
 }
 
 interface TechnicalIndicators {
-  rsi: number;
-  macd: number;
-  ema8: number;
-  ema21: number;
+  ema8: string;
+  ema21: string;
+  rsi: string;
+  macd: string;
+  macdHistogram: string;
+  vwap: string;
+  atr: string;
   volume: string;
-  vwap: number;
-  atr: number;
 }
 
-const AnalysisPanel = ({ symbol, timeframe }: AnalysisPanelProps) => {
+const AnalysisPanel = ({ symbol, timeframe, analysisData }: AnalysisPanelProps) => {
   const [indicators, setIndicators] = useState<TechnicalIndicators>({
-    rsi: 0,
-    macd: 0,
-    ema8: 0,
-    ema21: 0,
-    volume: 'neutral',
-    vwap: 0,
-    atr: 0
+    ema8: '0.00',
+    ema21: '0.00',
+    rsi: '50.0',
+    macd: '0.0000',
+    macdHistogram: '0.0000',
+    vwap: '0.00',
+    atr: '0.00',
+    volume: '0'
   });
 
   useEffect(() => {
-    // Simulate technical indicators
-    const mockIndicators: TechnicalIndicators = {
-      rsi: 30 + Math.random() * 40,
-      macd: (Math.random() - 0.5) * 2,
-      ema8: 145 + Math.random() * 10,
-      ema21: 140 + Math.random() * 15,
-      volume: Math.random() > 0.5 ? 'above' : 'below',
-      vwap: 148 + Math.random() * 8,
-      atr: 1 + Math.random() * 3
-    };
-    
-    setIndicators(mockIndicators);
-  }, [symbol, timeframe]);
+    if (analysisData?.technicalData) {
+      setIndicators(analysisData.technicalData);
+    } else {
+      // Fallback to mock data if no real data available
+      const mockIndicators: TechnicalIndicators = {
+        ema8: (145 + Math.random() * 10).toFixed(2),
+        ema21: (140 + Math.random() * 15).toFixed(2),
+        rsi: (30 + Math.random() * 40).toFixed(1),
+        macd: ((Math.random() - 0.5) * 2).toFixed(4),
+        macdHistogram: ((Math.random() - 0.5) * 1).toFixed(4),
+        vwap: (148 + Math.random() * 8).toFixed(2),
+        atr: (1 + Math.random() * 3).toFixed(2),
+        volume: (Math.random() * 50000000).toFixed(0)
+      };
+      setIndicators(mockIndicators);
+    }
+  }, [symbol, timeframe, analysisData]);
 
-  const getRSIStatus = (rsi: number) => {
-    if (rsi < 30) return { text: 'Oversold', class: 'indicator-positive' };
-    if (rsi > 70) return { text: 'Overbought', class: 'indicator-negative' };
+  const getRSIStatus = (rsi: string) => {
+    const rsiValue = parseFloat(rsi);
+    if (rsiValue < 30) return { text: 'Oversold', class: 'indicator-positive' };
+    if (rsiValue > 70) return { text: 'Overbought', class: 'indicator-negative' };
     return { text: 'Neutral', class: 'indicator-neutral' };
   };
 
-  const getMACDStatus = (macd: number) => {
-    if (macd > 0) return { text: 'Bullish', class: 'indicator-positive' };
-    if (macd < 0) return { text: 'Bearish', class: 'indicator-negative' };
+  const getMACDStatus = (macd: string) => {
+    const macdValue = parseFloat(macd);
+    if (macdValue > 0) return { text: 'Bullish', class: 'indicator-positive' };
+    if (macdValue < 0) return { text: 'Bearish', class: 'indicator-negative' };
     return { text: 'Neutral', class: 'indicator-neutral' };
   };
 
   const getEMACrossover = () => {
-    if (indicators.ema8 > indicators.ema21) {
+    const ema8Value = parseFloat(indicators.ema8);
+    const ema21Value = parseFloat(indicators.ema21);
+    if (ema8Value > ema21Value) {
       return { text: 'Bullish Cross', class: 'indicator-positive' };
     }
     return { text: 'Bearish Cross', class: 'indicator-negative' };
   };
 
+  const getMACDHistogramStatus = (hist: string) => {
+    const histValue = parseFloat(hist);
+    if (histValue > 0) return { text: 'Green', class: 'indicator-positive' };
+    if (histValue < 0) return { text: 'Red', class: 'indicator-negative' };
+    return { text: 'Neutral', class: 'indicator-neutral' };
+  };
+
+  const formatVolume = (volume: string) => {
+    const num = parseInt(volume) || 0;
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
   const rsiStatus = getRSIStatus(indicators.rsi);
   const macdStatus = getMACDStatus(indicators.macd);
   const emaStatus = getEMACrossover();
+  const histogramStatus = getMACDHistogramStatus(indicators.macdHistogram);
 
   return (
     <div className="p-4 border-b border-slate-700 custom-scrollbar overflow-y-auto">
-      <h3 className="text-lg font-semibold mb-4 text-slate-200">Technical Analysis</h3>
+      <h3 className="text-lg font-semibold mb-4 text-slate-200">Smart Momentum Analysis</h3>
       
       <div className="space-y-4">
+        <div className="bg-slate-700 rounded-lg p-3">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-slate-300 text-sm">EMA Crossover</span>
+            <span className={`text-xs px-2 py-1 rounded ${emaStatus.class}`}>
+              {emaStatus.text}
+            </span>
+          </div>
+          <div className="text-xs text-slate-400">
+            EMA8: ${indicators.ema8} | EMA21: ${indicators.ema21}
+          </div>
+        </div>
+
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="flex justify-between items-center mb-2">
             <span className="text-slate-300 text-sm">RSI (14)</span>
@@ -77,7 +119,7 @@ const AnalysisPanel = ({ symbol, timeframe }: AnalysisPanelProps) => {
               {rsiStatus.text}
             </span>
           </div>
-          <div className="text-white font-semibold">{indicators.rsi.toFixed(1)}</div>
+          <div className="text-white font-semibold">{indicators.rsi}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
@@ -87,40 +129,43 @@ const AnalysisPanel = ({ symbol, timeframe }: AnalysisPanelProps) => {
               {macdStatus.text}
             </span>
           </div>
-          <div className="text-white font-semibold">{indicators.macd.toFixed(3)}</div>
+          <div className="text-white font-semibold">{indicators.macd}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-slate-300 text-sm">EMA Cross</span>
-            <span className={`text-xs px-2 py-1 rounded ${emaStatus.class}`}>
-              {emaStatus.text}
+            <span className="text-slate-300 text-sm">MACD Histogram</span>
+            <span className={`text-xs px-2 py-1 rounded ${histogramStatus.class}`}>
+              {histogramStatus.text}
             </span>
           </div>
-          <div className="text-xs text-slate-400">
-            EMA8: {indicators.ema8.toFixed(2)} | EMA21: {indicators.ema21.toFixed(2)}
-          </div>
-        </div>
-
-        <div className="bg-slate-700 rounded-lg p-3">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-slate-300 text-sm">Volume</span>
-            <span className={`text-xs px-2 py-1 rounded ${
-              indicators.volume === 'above' ? 'indicator-positive' : 'indicator-negative'
-            }`}>
-              {indicators.volume === 'above' ? 'Above Avg' : 'Below Avg'}
-            </span>
-          </div>
+          <div className="text-white font-semibold">{indicators.macdHistogram}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="text-slate-300 text-sm mb-1">VWAP</div>
-          <div className="text-white font-semibold">${indicators.vwap.toFixed(2)}</div>
+          <div className="text-white font-semibold">${indicators.vwap}</div>
+        </div>
+
+        <div className="bg-slate-700 rounded-lg p-3">
+          <div className="text-slate-300 text-sm mb-1">Volume</div>
+          <div className="text-white font-semibold">{formatVolume(indicators.volume)}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="text-slate-300 text-sm mb-1">ATR (14)</div>
-          <div className="text-white font-semibold">{indicators.atr.toFixed(2)}</div>
+          <div className="text-white font-semibold">{indicators.atr}</div>
+        </div>
+
+        {/* Strategy Status */}
+        <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
+          <div className="text-blue-400 text-xs font-medium mb-1">📊 Strategy Status</div>
+          <div className="text-blue-300 text-xs">
+            {analysisData?.analysis ? 
+              `${analysisData.analysis.marketBias} bias detected` : 
+              'Analyzing market conditions...'
+            }
+          </div>
         </div>
       </div>
     </div>
