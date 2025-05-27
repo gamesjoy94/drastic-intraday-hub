@@ -1,5 +1,4 @@
-
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface LivePriceData {
   price: number;
@@ -13,10 +12,11 @@ interface UseLivePriceProps {
 
 export const useLivePrice = ({ onPriceUpdate }: UseLivePriceProps) => {
   const [livePriceData, setLivePriceData] = useState<LivePriceData | null>(null);
-
-  // Memoize the price update callback to prevent dependency changes
-  const updatePriceCallback = useCallback((price: number, change: number) => {
-    onPriceUpdate(price, change);
+  const onPriceUpdateRef = useRef(onPriceUpdate);
+  
+  // Keep the ref updated without causing re-renders
+  useEffect(() => {
+    onPriceUpdateRef.current = onPriceUpdate;
   }, [onPriceUpdate]);
 
   // Enhanced live price simulation for XAUUSD with stable dependencies
@@ -46,7 +46,7 @@ export const useLivePrice = ({ onPriceUpdate }: UseLivePriceProps) => {
       };
       
       setLivePriceData(newPriceData);
-      updatePriceCallback(finalPrice, priceChange);
+      onPriceUpdateRef.current(finalPrice, priceChange);
       lastPrice = finalPrice;
     };
 
@@ -60,7 +60,7 @@ export const useLivePrice = ({ onPriceUpdate }: UseLivePriceProps) => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [updatePriceCallback]);
+  }, []); // Empty dependency array to prevent infinite loops
 
   return { livePriceData };
 };
