@@ -15,7 +15,7 @@ const MetricCard = ({ title, value, change, trend, icon }: MetricCardProps) => {
   const trendBg = trend === 'up' ? 'bg-green-400/10' : trend === 'down' ? 'bg-red-400/10' : 'bg-yellow-400/10';
 
   return (
-    <Card className="bg-slate-800 border-slate-700">
+    <Card className="bg-slate-800 border-slate-700 relative z-10">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
           {icon}
@@ -68,7 +68,7 @@ const DashboardMetrics = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 relative z-10">
       {metrics.map((metric, index) => (
         <MetricCard key={index} {...metric} />
       ))}

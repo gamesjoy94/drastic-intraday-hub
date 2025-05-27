@@ -1,3 +1,4 @@
+
 import { Clock, TrendingUp, Zap } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
@@ -11,7 +12,7 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
   const currentTime = new Date().toLocaleTimeString();
   
   return (
-    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4 shadow-lg">
+    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4 shadow-lg relative z-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 lg:gap-6 min-w-0">
           {/* Professional Logo with Initials */}
