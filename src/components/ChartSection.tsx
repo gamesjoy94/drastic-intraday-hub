@@ -1,6 +1,9 @@
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { AlertCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import LivePriceBanner from './LivePriceBanner';
+import TradingViewWidget from './TradingViewWidget';
+import ChartLoadingState from './ChartLoadingState';
+import { useLivePrice } from '@/hooks/useLivePrice';
 
 interface ChartSectionProps {
   symbol: string;
@@ -9,64 +12,11 @@ interface ChartSectionProps {
 }
 
 const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
   const [chartError, setChartError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [widgetKey, setWidgetKey] = useState(0);
-  const [livePriceData, setLivePriceData] = useState<{
-    price: number;
-    change: number;
-    timestamp: string;
-  } | null>(null);
 
-  // Memoize the price update callback to prevent dependency changes
-  const updatePriceCallback = useCallback((price: number, change: number) => {
-    onPriceUpdate(price, change);
-  }, [onPriceUpdate]);
-
-  // Enhanced live price simulation for XAUUSD with stable dependencies
-  useEffect(() => {
-    let basePrice = 2650;
-    let lastPrice = basePrice;
-    let isMounted = true;
-    
-    const updatePrice = () => {
-      if (!isMounted) return;
-      
-      // More realistic gold price movements
-      const volatility = 0.0008;
-      const randomChange = (Math.random() - 0.5) * volatility;
-      const newPrice = lastPrice * (1 + randomChange);
-      
-      // Add some momentum
-      const momentum = Math.sin(Date.now() / 100000) * 0.0002;
-      const finalPrice = newPrice * (1 + momentum);
-      
-      const priceChange = ((finalPrice - basePrice) / basePrice) * 100;
-      
-      const newPriceData = {
-        price: finalPrice,
-        change: priceChange,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      
-      setLivePriceData(newPriceData);
-      updatePriceCallback(finalPrice, priceChange);
-      lastPrice = finalPrice;
-    };
-
-    // Initial update
-    updatePrice();
-    
-    // Set up interval
-    const interval = setInterval(updatePrice, 2000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [updatePriceCallback]); // Stable dependency
+  const { livePriceData } = useLivePrice({ onPriceUpdate });
 
   useEffect(() => {
     console.log('ChartSection: Loading XAUUSD chart');
@@ -85,72 +35,6 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
     };
   }, [symbol, timeframe]);
 
-  useEffect(() => {
-    console.log('ChartSection: Loading TradingView widget for XAUUSD');
-    
-    if (!widgetRef.current) {
-      console.log('ChartSection: Widget ref not available');
-      return;
-    }
-
-    try {
-      // Clear existing content
-      widgetRef.current.innerHTML = '';
-      
-      // Create widget container
-      const widgetContainer = document.createElement('div');
-      widgetContainer.className = 'tradingview-widget-container__widget';
-      widgetContainer.style.height = '100%';
-      widgetContainer.style.width = '100%';
-
-      // Create script element
-      const script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-      script.type = 'text/javascript';
-      script.async = true;
-      
-      const config = {
-        autosize: true,
-        symbol: "FX:XAUUSD",
-        interval: timeframe,
-        timezone: "Etc/UTC",
-        theme: "dark",
-        style: "1",
-        locale: "en",
-        enable_publishing: false,
-        withdateranges: true,
-        hide_side_toolbar: false,
-        allow_symbol_change: false,
-        details: true,
-        hotlist: true,
-        calendar: true,
-        support_host: "https://www.tradingview.com"
-      };
-
-      script.innerHTML = JSON.stringify(config);
-
-      script.onload = () => {
-        console.log('ChartSection: TradingView XAUUSD chart loaded successfully');
-        setIsLoading(false);
-        setChartError(false);
-      };
-
-      script.onerror = (error) => {
-        console.error('ChartSection: TradingView script failed to load', error);
-        setIsLoading(false);
-        setChartError(true);
-      };
-
-      widgetContainer.appendChild(script);
-      widgetRef.current.appendChild(widgetContainer);
-
-    } catch (error) {
-      console.error('ChartSection: Error creating TradingView widget:', error);
-      setIsLoading(false);
-      setChartError(true);
-    }
-  }, [widgetKey, timeframe]);
-
   const handleRetryChart = () => {
     console.log('ChartSection: Retrying XAUUSD chart load');
     setChartError(false);
@@ -160,68 +44,21 @@ const ChartSection = ({ symbol, timeframe, onPriceUpdate }: ChartSectionProps) =
 
   return (
     <div className="flex-1 bg-slate-800 m-2 lg:m-4 rounded-lg overflow-hidden">
-      {/* Live Price Banner */}
-      {livePriceData && (
-        <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 p-2 lg:p-3 border-b border-yellow-500 relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 lg:gap-3">
-              <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
-              <span className="text-white font-semibold text-sm lg:text-base">Live XAUUSD Feed</span>
-            </div>
-            <div className="flex items-center gap-2 lg:gap-4 text-white">
-              <span className="text-base lg:text-lg font-bold">
-                ${livePriceData.price.toFixed(2)}
-              </span>
-              <span className={`text-xs lg:text-sm font-medium ${
-                livePriceData.change >= 0 ? 'text-green-200' : 'text-red-200'
-              }`}>
-                {livePriceData.change >= 0 ? '+' : ''}{livePriceData.change.toFixed(3)}%
-              </span>
-              <span className="text-xs opacity-75 hidden sm:inline">
-                {livePriceData.timestamp}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <LivePriceBanner livePriceData={livePriceData} />
 
       <div className="h-full relative">
-        {/* Widget Container */}
-        <div
-          key={widgetKey}
-          ref={widgetRef}
-          className="absolute inset-0 tradingview-widget-container"
-          style={{ height: '100%', width: '100%' }}
+        <TradingViewWidget
+          timeframe={timeframe}
+          widgetKey={widgetKey}
+          onLoadingChange={setIsLoading}
+          onErrorChange={setChartError}
         />
         
-        {/* Loading State */}
-        {isLoading && !chartError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-            <div className="text-center p-4">
-              <div className="w-8 h-8 lg:w-12 lg:h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <div className="text-slate-400 text-sm lg:text-base">Loading XAUUSD Chart...</div>
-              <div className="text-xs text-slate-500 mt-2">Gold/USD Live Trading Chart</div>
-            </div>
-          </div>
-        )}
-        
-        {/* Error State */}
-        {chartError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-            <div className="text-center p-4">
-              <AlertCircle className="w-8 h-8 lg:w-12 lg:h-12 text-red-400 mx-auto mb-4" />
-              <div className="text-slate-400 mb-2 text-sm lg:text-base">Failed to load XAUUSD chart</div>
-              <div className="text-xs text-slate-500 mb-4">Chart connection interrupted</div>
-              <button
-                onClick={handleRetryChart}
-                className="flex items-center gap-2 mx-auto px-3 py-2 lg:px-4 lg:py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors text-sm lg:text-base"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Retry Chart
-              </button>
-            </div>
-          </div>
-        )}
+        <ChartLoadingState
+          isLoading={isLoading}
+          chartError={chartError}
+          onRetryChart={handleRetryChart}
+        />
       </div>
     </div>
   );
