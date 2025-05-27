@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu } from 'lucide-react';
+import { Menu, RefreshCw } from 'lucide-react';
 
 const TradingDashboard = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
@@ -21,11 +21,19 @@ const TradingDashboard = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const handleAnalyzeMarket = async () => {
+  const handleAnalyzeMarket = async (isRetry = false) => {
     setIsAnalyzing(true);
+    setConnectionError(false);
+    
+    if (!isRetry) {
+      setRetryCount(0);
+    }
+    
     console.log(`Running Smart Momentum Scalping analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
@@ -49,6 +57,8 @@ const TradingDashboard = () => {
       setPriceChange(data.priceChange);
       setTradePlan(data.tradePlan);
       setAnalysisData(data);
+      setConnectionError(false);
+      setRetryCount(0);
 
       toast({
         title: "Smart Momentum Analysis Complete",
@@ -57,14 +67,34 @@ const TradingDashboard = () => {
 
     } catch (error) {
       console.error('Smart Momentum Scalping analysis failed:', error);
-      toast({
-        title: "Analysis Failed",
-        description: error.message || "Failed to analyze market data. Please try again.",
-        variant: "destructive",
-      });
+      setConnectionError(true);
+      
+      if (retryCount < 2) {
+        // Auto retry up to 2 times
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          handleAnalyzeMarket(true);
+        }, 2000);
+        
+        toast({
+          title: "Connection Issue",
+          description: `Retrying analysis... (${retryCount + 1}/3)`,
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "Unable to connect to analysis service. Please check your connection and try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleRetryConnection = () => {
+    setRetryCount(0);
+    handleAnalyzeMarket();
   };
 
   const SidebarContent = () => (
@@ -79,6 +109,22 @@ const TradingDashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
+      {/* Connection Error Banner */}
+      {connectionError && (
+        <div className="fixed top-0 left-0 right-0 bg-red-600 text-white px-4 py-2 text-center text-sm z-50">
+          <div className="flex items-center justify-center gap-2">
+            <span>Connection issue detected</span>
+            <button 
+              onClick={handleRetryConnection}
+              className="underline hover:no-underline flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Sidebar */}
       {!isMobile && <SidebarContent />}
       
@@ -96,7 +142,7 @@ const TradingDashboard = () => {
         </Sheet>
       )}
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 ${connectionError ? 'mt-10' : ''}`}>
         <Navbar 
           selectedSymbol={selectedSymbol}
           currentPrice={currentPrice}
@@ -121,18 +167,25 @@ const TradingDashboard = () => {
             
             <div className="p-3 lg:p-4 border-t border-slate-700">
               <button
-                onClick={handleAnalyzeMarket}
+                onClick={() => handleAnalyzeMarket()}
                 disabled={isAnalyzing}
                 className={`w-full py-3 px-4 lg:px-6 rounded-lg font-semibold text-base lg:text-lg transition-all duration-200 ${
                   isAnalyzing 
                     ? 'bg-gray-600 cursor-not-allowed' 
+                    : connectionError
+                    ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg'
                 }`}
               >
                 {isAnalyzing ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Analyzing with AI...
+                    {retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Analyzing with AI...'}
+                  </div>
+                ) : connectionError ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw className="w-5 h-5" />
+                    Reconnect & Analyze
                   </div>
                 ) : (
                   '🚀 Smart Momentum Scalping Analysis'
