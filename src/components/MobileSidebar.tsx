@@ -24,11 +24,11 @@ const MobileSidebar = ({
     <>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          <button className="fixed top-4 left-4 z-50 p-2 bg-slate-800/90 backdrop-blur-sm rounded-md border border-slate-700 md:hidden shadow-lg transition-all duration-200 hover:bg-slate-700/90">
+          <button className="fixed top-4 left-4 z-50 p-2 bg-slate-800 rounded-md border border-slate-700 md:hidden">
             <Menu className="w-5 h-5" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-80 p-0 bg-slate-800 border-slate-700 z-60">
+        <SheetContent side="left" className="w-80 p-0 bg-slate-800 border-slate-700">
           <Sidebar 
             selectedSymbol={selectedSymbol}
             setSelectedSymbol={setSelectedSymbol}

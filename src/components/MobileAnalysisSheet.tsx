@@ -16,12 +16,12 @@ const MobileAnalysisSheet = ({ selectedSymbol, selectedTimeframe, analysisData, 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 rounded-full shadow-xl z-40 border-2 border-white/20 backdrop-blur-sm transition-all duration-200 hover:scale-105 md:hidden">
-          <Menu className="w-5 h-5" />
+        <button className="fixed bottom-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 rounded-full shadow-lg z-40">
+          <Menu className="w-6 h-6" />
         </button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[80vh] bg-slate-900 border-slate-700 z-60">
-        <div className="overflow-y-auto h-full custom-scrollbar pt-4">
+      <SheetContent side="bottom" className="h-[70vh] bg-slate-900 border-slate-700">
+        <div className="overflow-y-auto h-full">
           <MarketData symbol={selectedSymbol} />
           <AnalysisPanel 
             symbol={selectedSymbol} 
