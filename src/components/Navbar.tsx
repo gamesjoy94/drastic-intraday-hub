@@ -26,7 +26,7 @@ const Navbar = ({ selectedSymbol, currentPrice, priceChange }: NavbarProps) => {
                 Gold Trading Pro
               </h1>
               <span className="text-xs text-slate-400 hidden sm:block">
-                by Eyong Drastic
+                by E.drastic
               </span>
             </div>
           </div>
