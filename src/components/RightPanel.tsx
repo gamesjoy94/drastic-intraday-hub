@@ -2,6 +2,7 @@
 import MarketData from './MarketData';
 import AnalysisPanel from './AnalysisPanel';
 import TradePlan from './TradePlan';
+import PatternRecognition from './PatternRecognition';
 
 interface RightPanelProps {
   selectedSymbol: string;
@@ -20,6 +21,7 @@ const RightPanel = ({ selectedSymbol, selectedTimeframe, analysisData, tradePlan
           timeframe={selectedTimeframe}
           analysisData={analysisData}
         />
+        <PatternRecognition patternData={analysisData?.patternData} />
         <TradePlan tradePlan={tradePlan} />
       </div>
     </div>

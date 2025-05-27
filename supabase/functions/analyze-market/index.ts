@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -73,74 +72,47 @@ serve(async (req) => {
       volume: ohlcvData.values.slice(0, 25).map((v: any) => parseFloat(v.volume)),
       vwap: vwapData.values?.slice(0, 10).map((v: any) => parseFloat(v.vwap)) || [],
       atr: atrData.values?.slice(0, 10).map((v: any) => parseFloat(v.atr)) || [],
-      ohlcv: ohlcvData.values.slice(0, 10)
+      ohlcv: ohlcvData.values.slice(0, 50)
     };
 
     // Calculate Smart Momentum Scalping signals
     const analysis = analyzeSmartMomentumScalping(technicalData, currentPrice);
+    
+    // Add Pattern Recognition Analysis
+    const patternData = analyzePatterns(technicalData, currentPrice);
 
     // Create detailed AI prompt for trade plan generation
     const strategyPrompt = `
-SMART MOMENTUM SCALPING STRATEGY ANALYSIS FOR ${symbol}
+SMART MOMENTUM SCALPING + PATTERN RECOGNITION ANALYSIS FOR ${symbol}
 
 Current Market State:
 - Price: $${currentPrice.toFixed(2)}
 - Price Change: ${priceChange.toFixed(2)}%
 - Timeframe: ${timeframe}
 
-Technical Indicators:
+MOMENTUM ANALYSIS:
 - EMA 8: $${technicalData.ema8[0]?.toFixed(2) || 'N/A'}
 - EMA 21: $${technicalData.ema21[0]?.toFixed(2) || 'N/A'}
 - EMA Crossover Signal: ${analysis.emaCrossover}
-- RSI: ${technicalData.rsi[0]?.toFixed(1) || 'N/A'} (Previous: ${technicalData.rsi[1]?.toFixed(1) || 'N/A'})
-- RSI Direction: ${analysis.rsiDirection}
+- RSI: ${technicalData.rsi[0]?.toFixed(1) || 'N/A'}
 - MACD: ${technicalData.macd[0]?.toFixed(4) || 'N/A'}
-- MACD Histogram: ${technicalData.macdHistogram[0]?.toFixed(4) || 'N/A'} (Previous: ${technicalData.macdHistogram[1]?.toFixed(4) || 'N/A'})
-- MACD Signal: ${analysis.macdSignal}
-- Volume: ${technicalData.volume[0]?.toLocaleString() || 'N/A'}
 - Volume Spike: ${analysis.volumeSpike}
-- VWAP: $${technicalData.vwap[0]?.toFixed(2) || 'N/A'}
-- Price vs VWAP: ${analysis.vwapPosition}
-- ATR: $${technicalData.atr[0]?.toFixed(2) || 'N/A'}
+- VWAP Position: ${analysis.vwapPosition}
 
-Strategy Conditions Analysis:
-LONG SETUP:
-✓ EMA 8 > EMA 21: ${analysis.ema8AboveEma21 ? 'YES' : 'NO'}
-✓ RSI > 50 and Rising: ${analysis.rsiLongCondition ? 'YES' : 'NO'}
-✓ MACD Histogram Turning Green: ${analysis.macdBullish ? 'YES' : 'NO'}
-✓ Volume Above Average: ${analysis.volumeSpike ? 'YES' : 'NO'}
-✓ Price Above VWAP: ${analysis.priceAboveVwap ? 'YES' : 'NO'}
+PATTERN RECOGNITION:
+- Primary Pattern: ${patternData.pattern} (${patternData.strength})
+- Direction: ${patternData.direction}
+- Support: $${patternData.support}
+- Resistance: $${patternData.resistance}
+- Breakout Level: $${patternData.breakoutLevel}
+- Pattern Probability: ${patternData.probability}%
 
-SHORT SETUP:
-✓ EMA 8 < EMA 21: ${analysis.ema8BelowEma21 ? 'YES' : 'NO'}
-✓ RSI < 50 and Falling: ${analysis.rsiShortCondition ? 'YES' : 'NO'}
-✓ MACD Histogram Turning Red: ${analysis.macdBearish ? 'YES' : 'NO'}
-✓ Volume Above Average: ${analysis.volumeSpike ? 'YES' : 'NO'}
-✓ Price Below VWAP: ${analysis.priceBelowVwap ? 'YES' : 'NO'}
+COMBINED SIGNAL STRENGTH:
+- Momentum Score: ${Math.max(analysis.longScore, analysis.shortScore)}/5
+- Pattern Strength: ${patternData.strength}
+- Overall Bias: ${analysis.marketBias}
 
-Overall Signal Strength:
-- Long Signal Score: ${analysis.longScore}/5
-- Short Signal Score: ${analysis.shortScore}/5
-- Market Bias: ${analysis.marketBias}
-
-Recent Price Action:
-${technicalData.ohlcv.slice(0, 5).map((v: any, i: number) => 
-  `${i + 1}. O: $${v.open}, H: $${v.high}, L: $${v.low}, C: $${v.close}, Vol: ${parseInt(v.volume).toLocaleString()}`
-).join('\n')}
-
-Based on this Smart Momentum Scalping analysis, provide a professional intraday trade recommendation with:
-1. Trade Direction (LONG/SHORT/NO TRADE)
-2. Entry Price (current market or specific level)
-3. Stop Loss (below last swing low for long, above swing high for short)
-4. Take Profit (1.5x ATR target: $${(technicalData.atr[0] * 1.5).toFixed(2)})
-5. Risk-Reward Ratio
-6. Position Size Recommendation (% of capital)
-7. Market Timing Assessment
-8. Key Risk Factors
-9. Strategy Rationale (max 150 words)
-10. Confidence Level (0-100%)
-
-Respond in JSON format with these exact keys: direction, entry, stopLoss, takeProfit, riskReward, positionSize, timing, risks, strategy, confidence, indicators
+Based on this combined analysis, provide a professional trade recommendation with JSON format containing: direction, entry, stopLoss, takeProfit, riskReward, positionSize, timing, risks, strategy, confidence, indicators
 `;
 
     // Get AI analysis from OpenAI
@@ -155,7 +127,7 @@ Respond in JSON format with these exact keys: direction, entry, stopLoss, takePr
         messages: [
           {
             role: 'system',
-            content: 'You are a professional intraday trading analyst specializing in Smart Momentum Scalping strategies. Provide precise, actionable trade recommendations based on technical analysis. Always respond with valid JSON format.'
+            content: 'You are a professional trading analyst specializing in Smart Momentum Scalping and Pattern Recognition. Provide precise, actionable trade recommendations. Always respond with valid JSON format.'
           },
           {
             role: 'user',
@@ -178,7 +150,6 @@ Respond in JSON format with these exact keys: direction, entry, stopLoss, takePr
       tradePlan = JSON.parse(aiResponse.choices[0].message.content);
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', parseError);
-      // Fallback trade plan based on analysis
       tradePlan = generateFallbackTradePlan(analysis, currentPrice, technicalData.atr[0]);
     }
 
@@ -186,6 +157,7 @@ Respond in JSON format with these exact keys: direction, entry, stopLoss, takePr
       currentPrice,
       priceChange,
       analysis,
+      patternData,
       tradePlan: {
         direction: tradePlan.direction || 'NO TRADE',
         entry: parseFloat(tradePlan.entry) || currentPrice,
@@ -195,8 +167,8 @@ Respond in JSON format with these exact keys: direction, entry, stopLoss, takePr
         positionSize: tradePlan.positionSize || "1-2%",
         timing: tradePlan.timing || "Monitor for entry",
         risks: tradePlan.risks || "Standard market risks apply",
-        strategy: tradePlan.strategy || analysis.summary,
-        confidence: parseInt(tradePlan.confidence) || analysis.confidenceScore,
+        strategy: tradePlan.strategy || `${analysis.summary} Combined with ${patternData.pattern} pattern.`,
+        confidence: parseInt(tradePlan.confidence) || Math.min(analysis.confidenceScore + patternData.probability, 100) / 2,
         indicators: tradePlan.indicators || analysis.indicators
       },
       technicalData: {
@@ -211,21 +183,22 @@ Respond in JSON format with these exact keys: direction, entry, stopLoss, takePr
       }
     };
 
-    console.log('Smart Momentum Scalping analysis completed successfully:', result);
+    console.log('Smart Momentum + Pattern Recognition analysis completed successfully:', result);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in Smart Momentum Scalping analysis:', error);
+    console.error('Error in analysis:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
         currentPrice: 0,
         priceChange: 0,
         tradePlan: null,
-        analysis: null
+        analysis: null,
+        patternData: null
       }), 
       {
         status: 500,
@@ -321,6 +294,101 @@ function analyzeSmartMomentumScalping(data: TechnicalData, currentPrice: number)
       macd: `${macdSignal}`,
       volume: volumeSpike ? 'HIGH' : 'NORMAL',
       vwap: vwapPosition
+    }
+  };
+}
+
+function analyzePatterns(data: TechnicalData, currentPrice: number) {
+  const ohlcv = data.ohlcv.slice(0, 20);
+  const highs = ohlcv.map(v => parseFloat(v.high));
+  const lows = ohlcv.map(v => parseFloat(v.low));
+  const closes = ohlcv.map(v => parseFloat(v.close));
+  const volumes = data.volume.slice(0, 20);
+  
+  // Calculate support and resistance levels
+  const recentHighs = highs.slice(0, 10);
+  const recentLows = lows.slice(0, 10);
+  const resistance = Math.max(...recentHighs);
+  const support = Math.min(...recentLows);
+  const pivot = (resistance + support + currentPrice) / 3;
+  
+  // Pattern detection logic
+  let pattern = 'Consolidation';
+  let direction = 'NEUTRAL';
+  let strength = 'MODERATE';
+  let probability = 60;
+  
+  // Detect ascending triangle
+  if (recentHighs.filter(h => h > currentPrice * 1.01).length >= 2 && 
+      recentLows.slice(0, 5).every((low, i, arr) => i === 0 || low >= arr[i-1] * 0.999)) {
+    pattern = 'Ascending Triangle';
+    direction = 'BULLISH';
+    strength = 'STRONG';
+    probability = 75;
+  }
+  // Detect descending triangle
+  else if (recentLows.filter(l => l < currentPrice * 0.99).length >= 2 && 
+           recentHighs.slice(0, 5).every((high, i, arr) => i === 0 || high <= arr[i-1] * 1.001)) {
+    pattern = 'Descending Triangle';
+    direction = 'BEARISH';
+    strength = 'STRONG';
+    probability = 75;
+  }
+  // Detect double top
+  else if (recentHighs.length >= 2 && Math.abs(recentHighs[0] - recentHighs[1]) < currentPrice * 0.005) {
+    pattern = 'Double Top';
+    direction = 'BEARISH';
+    strength = 'MODERATE';
+    probability = 65;
+  }
+  // Detect double bottom
+  else if (recentLows.length >= 2 && Math.abs(recentLows[0] - recentLows[1]) < currentPrice * 0.005) {
+    pattern = 'Double Bottom';
+    direction = 'BULLISH';
+    strength = 'MODERATE';
+    probability = 65;
+  }
+  // Detect flag pattern
+  else if (Math.abs(resistance - support) < currentPrice * 0.02) {
+    pattern = 'Flag Pattern';
+    direction = closes[0] > closes[4] ? 'BULLISH' : 'BEARISH';
+    strength = 'WEAK';
+    probability = 55;
+  }
+  
+  // Calculate breakout level and target
+  const atr = data.atr[0] || currentPrice * 0.02;
+  const breakoutLevel = direction === 'BULLISH' ? resistance : support;
+  const target = direction === 'BULLISH' ? 
+    breakoutLevel + (atr * 2) : 
+    breakoutLevel - (atr * 2);
+  
+  // Volume confirmation
+  const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+  const volumeConfirmation = volumes[0] > avgVolume * 1.2;
+  
+  if (volumeConfirmation && strength === 'MODERATE') {
+    strength = 'STRONG';
+    probability += 10;
+  }
+  
+  return {
+    pattern,
+    direction,
+    strength,
+    probability: Math.min(probability, 85),
+    support: support.toFixed(2),
+    resistance: resistance.toFixed(2),
+    pivot: pivot.toFixed(2),
+    breakoutLevel: breakoutLevel.toFixed(2),
+    target: target.toFixed(2),
+    description: `${pattern} detected with ${direction.toLowerCase()} bias`,
+    analysis: `Pattern shows ${strength.toLowerCase()} ${direction.toLowerCase()} potential. Key level at $${breakoutLevel.toFixed(2)} with target around $${target.toFixed(2)}. ${volumeConfirmation ? 'Volume confirms the pattern.' : 'Volume needs confirmation.'}`,
+    signals: {
+      volumeConfirmation: volumeConfirmation ? 'CONFIRMED' : 'PENDING',
+      priceAction: direction,
+      keyLevel: `$${breakoutLevel.toFixed(2)}`,
+      riskLevel: strength === 'STRONG' ? 'LOW' : strength === 'MODERATE' ? 'MEDIUM' : 'HIGH'
     }
   };
 }

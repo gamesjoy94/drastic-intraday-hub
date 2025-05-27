@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import MarketData from './MarketData';
 import AnalysisPanel from './AnalysisPanel';
+import PatternRecognition from './PatternRecognition';
 import TradePlan from './TradePlan';
 
 interface MobileAnalysisSheetProps {
@@ -28,6 +29,7 @@ const MobileAnalysisSheet = ({ selectedSymbol, selectedTimeframe, analysisData, 
             timeframe={selectedTimeframe}
             analysisData={analysisData}
           />
+          <PatternRecognition patternData={analysisData?.patternData} />
           <TradePlan tradePlan={tradePlan} />
         </div>
       </SheetContent>
