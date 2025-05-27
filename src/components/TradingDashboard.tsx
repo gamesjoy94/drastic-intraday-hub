@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -23,23 +22,59 @@ const TradingDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastAnalysisTime, setLastAnalysisTime] = useState(0);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  // Rate limiting: prevent too frequent API calls
+  const RATE_LIMIT_DELAY = 10000; // 10 seconds between calls
+
+  const formatSymbolForAPI = (symbol: string) => {
+    // Convert forex pairs to API format
+    const forexPairs: { [key: string]: string } = {
+      'XAUUSD': 'XAU/USD',
+      'EURUSD': 'EUR/USD',
+      'GBPUSD': 'GBP/USD',
+      'USDJPY': 'USD/JPY',
+      'AUDUSD': 'AUD/USD',
+      'USDCAD': 'USD/CAD',
+      'USDCHF': 'USD/CHF',
+      'NZDUSD': 'NZD/USD'
+    };
+    
+    return forexPairs[symbol] || symbol;
+  };
+
   const handleAnalyzeMarket = async (isRetry = false) => {
+    // Rate limiting check
+    const now = Date.now();
+    if (!isRetry && now - lastAnalysisTime < RATE_LIMIT_DELAY) {
+      const remainingTime = Math.ceil((RATE_LIMIT_DELAY - (now - lastAnalysisTime)) / 1000);
+      toast({
+        title: "Rate Limited",
+        description: `Please wait ${remainingTime} seconds before making another request to avoid API limits.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
     setConnectionError(false);
     
     if (!isRetry) {
       setRetryCount(0);
+      setLastAnalysisTime(now);
     }
     
     console.log(`Running Smart Momentum Scalping analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
+      // Format symbol for API
+      const apiSymbol = formatSymbolForAPI(selectedSymbol);
+      
       const { data, error } = await supabase.functions.invoke('analyze-market', {
         body: { 
-          symbol: selectedSymbol, 
+          symbol: apiSymbol, 
           timeframe: selectedTimeframe 
         }
       });
@@ -49,6 +84,10 @@ const TradingDashboard = () => {
       }
 
       if (data.error) {
+        // Check if it's a rate limit error
+        if (data.error.includes('API credits') || data.error.includes('rate limit')) {
+          throw new Error(`Rate limit exceeded. The API has reached its quota. Please wait a moment before trying again.`);
+        }
         throw new Error(data.error);
       }
 
@@ -69,21 +108,29 @@ const TradingDashboard = () => {
       console.error('Smart Momentum Scalping analysis failed:', error);
       setConnectionError(true);
       
-      if (retryCount < 2) {
-        // Auto retry up to 2 times
+      const errorMessage = error.message || 'Unknown error';
+      
+      // Don't auto-retry on rate limit errors
+      if (errorMessage.includes('rate limit') || errorMessage.includes('API credits')) {
+        toast({
+          title: "API Rate Limit",
+          description: "The market data API has reached its limit. Please wait a few minutes before trying again.",
+          variant: "destructive",
+        });
+      } else if (retryCount < 1) { // Reduced retry count to prevent rate limiting
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
           handleAnalyzeMarket(true);
-        }, 2000);
+        }, 5000); // Increased delay between retries
         
         toast({
           title: "Connection Issue",
-          description: `Retrying analysis... (${retryCount + 1}/3)`,
+          description: `Retrying analysis... (${retryCount + 1}/2)`,
         });
       } else {
         toast({
           title: "Connection Failed",
-          description: "Unable to connect to analysis service. Please check your connection and try again.",
+          description: "Unable to connect to analysis service. Please check your connection and try again later.",
           variant: "destructive",
         });
       }
@@ -94,6 +141,7 @@ const TradingDashboard = () => {
 
   const handleRetryConnection = () => {
     setRetryCount(0);
+    setLastAnalysisTime(0); // Reset rate limit
     handleAnalyzeMarket();
   };
 
@@ -180,7 +228,7 @@ const TradingDashboard = () => {
                 {isAnalyzing ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Analyzing with AI...'}
+                    {retryCount > 0 ? `Retrying... (${retryCount}/2)` : 'Analyzing with AI...'}
                   </div>
                 ) : connectionError ? (
                   <div className="flex items-center justify-center gap-2">

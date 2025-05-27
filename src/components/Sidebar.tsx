@@ -13,9 +13,11 @@ interface SidebarProps {
 const Sidebar = ({ selectedSymbol, setSelectedSymbol, selectedTimeframe, setSelectedTimeframe, onClose }: SidebarProps) => {
   const [symbolInput, setSymbolInput] = useState('');
   
-  const popularSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'];
+  // Updated popular symbols with better mix of stocks and forex
+  const popularSymbols = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA', 'SPY', 'QQQ', 'BTC-USD'];
+  
+  // More conservative timeframes to reduce API calls
   const timeframes = [
-    { value: '1min', label: '1 Minute' },
     { value: '5min', label: '5 Minutes' },
     { value: '15min', label: '15 Minutes' },
     { value: '30min', label: '30 Minutes' },
@@ -143,6 +145,11 @@ const Sidebar = ({ selectedSymbol, setSelectedSymbol, selectedTimeframe, setSele
           <div className="bg-slate-700 rounded-lg p-3">
             <div className="text-sm text-slate-300">Session</div>
             <div className="text-blue-400 font-medium">US Market</div>
+          </div>
+          
+          <div className="bg-slate-700 rounded-lg p-3">
+            <div className="text-sm text-slate-300 mb-1">Rate Limit Info</div>
+            <div className="text-xs text-slate-400">Wait 10s between analyses to avoid API limits</div>
           </div>
         </div>
       </div>
