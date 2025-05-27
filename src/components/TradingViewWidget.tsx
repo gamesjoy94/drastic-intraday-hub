@@ -28,16 +28,23 @@ const TradingViewWidget = ({
       // Clear existing content
       widgetRef.current.innerHTML = '';
       
-      // Create the TradingView widget with a cleaner approach
+      // Create container div first
+      const container = document.createElement('div');
+      container.className = 'tradingview-widget-container__widget';
+      container.style.height = '100%';
+      container.style.width = '100%';
+      
+      // Create script element
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
       script.type = 'text/javascript';
       script.async = true;
       
+      // Try multiple symbol formats for better compatibility
       const config = {
         autosize: true,
-        symbol: "OANDA:XAUUSD",
-        interval: timeframe,
+        symbol: "TVC:GOLD", // Using TVC:GOLD which is more reliable
+        interval: timeframe === '5min' ? '5' : timeframe,
         timezone: "Etc/UTC",
         theme: "dark",
         style: "1",
@@ -47,7 +54,7 @@ const TradingViewWidget = ({
         gridColor: "rgba(71, 85, 105, 0.5)",
         withdateranges: true,
         hide_side_toolbar: false,
-        allow_symbol_change: false,
+        allow_symbol_change: true, // Allow symbol change for better flexibility
         details: true,
         hotlist: false,
         calendar: false,
@@ -58,11 +65,11 @@ const TradingViewWidget = ({
       script.innerHTML = JSON.stringify(config);
 
       script.onload = () => {
-        console.log('TradingViewWidget: TradingView XAUUSD chart loaded successfully');
+        console.log('TradingViewWidget: TradingView Gold chart loaded successfully');
         setTimeout(() => {
           onLoadingChange(false);
           onErrorChange(false);
-        }, 2000);
+        }, 3000); // Increased timeout for better loading
       };
 
       script.onerror = (error) => {
@@ -71,13 +78,14 @@ const TradingViewWidget = ({
         onErrorChange(true);
       };
 
-      widgetRef.current.appendChild(script);
+      container.appendChild(script);
+      widgetRef.current.appendChild(container);
 
       // Set a fallback timeout to stop loading state
       const fallbackTimeout = setTimeout(() => {
         console.log('TradingViewWidget: Fallback timeout reached');
         onLoadingChange(false);
-      }, 15000);
+      }, 20000); // Increased timeout
 
       return () => {
         clearTimeout(fallbackTimeout);
