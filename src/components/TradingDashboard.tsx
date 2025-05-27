@@ -6,42 +6,55 @@ import ChartSection from './ChartSection';
 import AnalysisPanel from './AnalysisPanel';
 import TradePlan from './TradePlan';
 import MarketData from './MarketData';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const TradingDashboard = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('5m');
+  const [selectedTimeframe, setSelectedTimeframe] = useState('5min');
   const [currentPrice, setCurrentPrice] = useState(0);
   const [priceChange, setPriceChange] = useState(0);
   const [tradePlan, setTradePlan] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { toast } = useToast();
 
   const handleAnalyzeMarket = async () => {
     setIsAnalyzing(true);
     console.log(`Analyzing ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock trade plan for demonstration
-      const mockTradePlan = {
-        entry: currentPrice + (Math.random() - 0.5) * 2,
-        stopLoss: currentPrice - Math.random() * 5,
-        takeProfit: currentPrice + Math.random() * 10,
-        riskReward: (2 + Math.random() * 2).toFixed(1),
-        strategy: `Based on technical analysis of ${selectedSymbol}, we identified a potential bullish setup with EMA crossover and RSI divergence. Entry recommended near current support level with favorable risk-reward ratio.`,
-        confidence: Math.floor(70 + Math.random() * 25),
-        indicators: {
-          ema: 'Bullish crossover detected',
-          rsi: 'Oversold condition',
-          macd: 'Positive momentum',
-          volume: 'Above average'
+      const { data, error } = await supabase.functions.invoke('analyze-market', {
+        body: { 
+          symbol: selectedSymbol, 
+          timeframe: selectedTimeframe 
         }
-      };
-      
-      setTradePlan(mockTradePlan);
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Update current price from real data
+      setCurrentPrice(data.currentPrice);
+      setPriceChange(data.priceChange);
+      setTradePlan(data.tradePlan);
+
+      toast({
+        title: "Analysis Complete",
+        description: `Market analysis for ${selectedSymbol} completed successfully.`,
+      });
+
     } catch (error) {
       console.error('Analysis failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze market data. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -69,8 +82,10 @@ const TradingDashboard = () => {
               symbol={selectedSymbol}
               timeframe={selectedTimeframe}
               onPriceUpdate={(price, change) => {
-                setCurrentPrice(price);
-                setPriceChange(change);
+                if (currentPrice === 0) { // Only update if we don't have real data yet
+                  setCurrentPrice(price);
+                  setPriceChange(change);
+                }
               }}
             />
             

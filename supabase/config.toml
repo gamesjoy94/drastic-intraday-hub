@@ -1,1 +1,5 @@
+
 project_id = "yppffgwsepvcrqdvegwp"
+
+[functions.analyze-market]
+verify_jwt = false

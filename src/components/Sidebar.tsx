@@ -14,10 +14,12 @@ const Sidebar = ({ selectedSymbol, setSelectedSymbol, selectedTimeframe, setSele
   
   const popularSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'];
   const timeframes = [
-    { value: '1m', label: '1 Minute' },
-    { value: '5m', label: '5 Minutes' },
-    { value: '15m', label: '15 Minutes' },
-    { value: '30m', label: '30 Minutes' }
+    { value: '1min', label: '1 Minute' },
+    { value: '5min', label: '5 Minutes' },
+    { value: '15min', label: '15 Minutes' },
+    { value: '30min', label: '30 Minutes' },
+    { value: '1h', label: '1 Hour' },
+    { value: '1day', label: '1 Day' }
   ];
 
   const handleSymbolSubmit = (e: React.FormEvent) => {
