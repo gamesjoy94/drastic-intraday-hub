@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Trading dashboard specific colors
+				trading: {
+					dark: '#0f172a',
+					darker: '#020617',
+					card: '#1e293b',
+					border: '#334155',
+					success: '#10b981',
+					danger: '#ef4444',
+					warning: '#f59e0b',
+					info: '#3b82f6'
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-green': {
+					'0%, 100%': { backgroundColor: '#10b981' },
+					'50%': { backgroundColor: '#059669' }
+				},
+				'pulse-red': {
+					'0%, 100%': { backgroundColor: '#ef4444' },
+					'50%': { backgroundColor: '#dc2626' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-green': 'pulse-green 2s infinite',
+				'pulse-red': 'pulse-red 2s infinite'
 			}
 		}
 	},
