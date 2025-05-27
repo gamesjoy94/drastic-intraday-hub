@@ -75,6 +75,7 @@ const TradingDashboard = () => {
                 selectedTimeframe={selectedTimeframe}
                 analysisData={analysisData}
                 tradePlan={tradePlan}
+                currentPrice={currentPrice}
               />
             )}
             
@@ -85,6 +86,7 @@ const TradingDashboard = () => {
                 selectedTimeframe={selectedTimeframe}
                 analysisData={analysisData}
                 tradePlan={tradePlan}
+                currentPrice={currentPrice}
               />
             )}
           </div>
