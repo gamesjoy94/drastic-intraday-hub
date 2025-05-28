@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import ConnectionErrorBanner from './ConnectionErrorBanner';
 import MainContent from './MainContent';
@@ -41,9 +41,15 @@ const TradingDashboard = () => {
   const handleTimeframeChange = (newTimeframe: string) => {
     console.log(`TradingDashboard: Changing timeframe from ${selectedTimeframe} to ${newTimeframe}`);
     setSelectedTimeframe(newTimeframe);
-    // Note: This will trigger the TradingView widget to reload with the new timeframe
-    // If you want to automatically re-analyze when timeframe changes, uncomment the line below:
-    // handleAnalyzeMarket(selectedSymbol, newTimeframe);
+    
+    // Automatically re-analyze with the new timeframe if we have previous analysis data
+    if (tradePlan || analysisData) {
+      console.log(`TradingDashboard: Auto-analyzing with new timeframe: ${newTimeframe}`);
+      // Small delay to ensure the timeframe state is updated
+      setTimeout(() => {
+        handleAnalyzeMarket(selectedSymbol, newTimeframe);
+      }, 100);
+    }
   };
 
   return (

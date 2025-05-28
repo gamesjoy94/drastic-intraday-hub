@@ -90,7 +90,7 @@ export const useMarketAnalysis = () => {
       } else {
         toast({
           title: "Analysis Failed",
-          description: "Unable to complete analysis. Click the button to retry.",
+          description: `Unable to complete analysis for ${selectedTimeframe} timeframe. Click the button to retry.`,
           variant: "destructive",
         });
       }
