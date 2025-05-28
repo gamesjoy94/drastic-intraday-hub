@@ -29,16 +29,21 @@ const TradingDashboard = () => {
   } = useMarketAnalysis();
 
   const handleAnalyze = () => {
+    console.log(`TradingDashboard: Initiating analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     handleAnalyzeMarket(selectedSymbol, selectedTimeframe);
   };
 
   const handleRetry = () => {
+    console.log(`TradingDashboard: Retrying analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     handleRetryConnection(selectedSymbol, selectedTimeframe);
   };
 
   const handleTimeframeChange = (newTimeframe: string) => {
     console.log(`TradingDashboard: Changing timeframe from ${selectedTimeframe} to ${newTimeframe}`);
     setSelectedTimeframe(newTimeframe);
+    // Note: This will trigger the TradingView widget to reload with the new timeframe
+    // If you want to automatically re-analyze when timeframe changes, uncomment the line below:
+    // handleAnalyzeMarket(selectedSymbol, newTimeframe);
   };
 
   return (

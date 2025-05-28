@@ -18,6 +18,7 @@ const TradingViewWidget = ({
 
   // Convert our timeframe format to TradingView format
   const convertToTradingViewInterval = (tf: string) => {
+    console.log(`TradingViewWidget: Converting timeframe ${tf} to TradingView format`);
     switch (tf) {
       case '1min': return '1';
       case '5min': return '5';
@@ -26,12 +27,15 @@ const TradingViewWidget = ({
       case '1h': return '60';
       case '4h': return '240';
       case '1D': return 'D';
-      default: return '5'; // Default to 5 min
+      default: 
+        console.warn(`TradingViewWidget: Unknown timeframe ${tf}, defaulting to 5min`);
+        return '5'; // Default to 5 min
     }
   };
 
   useEffect(() => {
-    console.log(`TradingViewWidget: Loading TradingView widget for XAUUSD on ${timeframe} timeframe`);
+    const tvInterval = convertToTradingViewInterval(timeframe);
+    console.log(`TradingViewWidget: Loading TradingView widget for XAUUSD on ${timeframe} timeframe (TradingView interval: ${tvInterval})`);
     
     if (!widgetRef.current) {
       console.log('TradingViewWidget: Widget ref not available');
@@ -54,9 +58,7 @@ const TradingViewWidget = ({
       script.type = 'text/javascript';
       script.async = true;
       
-      // Convert timeframe to TradingView format
-      const tvInterval = convertToTradingViewInterval(timeframe);
-      console.log(`TradingViewWidget: Using TradingView interval: ${tvInterval} for timeframe: ${timeframe}`);
+      console.log(`TradingViewWidget: Setting TradingView chart to ${timeframe} timeframe (interval: ${tvInterval})`);
       
       const config = {
         autosize: true,
@@ -82,7 +84,7 @@ const TradingViewWidget = ({
       script.innerHTML = JSON.stringify(config);
 
       script.onload = () => {
-        console.log(`TradingViewWidget: TradingView Gold chart loaded successfully on ${timeframe} timeframe`);
+        console.log(`TradingViewWidget: TradingView Gold chart loaded successfully on ${timeframe} timeframe (interval: ${tvInterval})`);
         setTimeout(() => {
           onLoadingChange(false);
           onErrorChange(false);

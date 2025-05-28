@@ -43,9 +43,16 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
   return (
     <div className="p-4 flex-1 custom-scrollbar overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-200">
-          Smart Momentum Scalping {selectedTimeframe && `(${selectedTimeframe})`}
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold text-slate-200">
+            Smart Momentum Scalping
+          </h3>
+          {selectedTimeframe && (
+            <div className="text-sm text-blue-400 font-medium">
+              Timeframe: {selectedTimeframe}
+            </div>
+          )}
+        </div>
         <div className={`px-2 py-1 rounded text-xs font-medium ${getConfidenceColor(tradePlan.confidence || 0)}`}>
           {renderValue(tradePlan.confidence)}% Confidence
         </div>
@@ -123,7 +130,7 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
         <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
           <div className="text-blue-400 text-xs font-medium mb-1">📈 Strategy: Smart Momentum Scalping</div>
           <div className="text-blue-300 text-xs">
-            Uses EMA crossover + RSI + MACD + Volume + VWAP for high-probability intraday setups
+            Uses EMA crossover + RSI + MACD + Volume + VWAP for high-probability {selectedTimeframe || 'intraday'} setups
           </div>
         </div>
 
@@ -131,7 +138,7 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
         <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-3">
           <div className="text-yellow-400 text-xs font-medium mb-1">⚠️ Risk Warning</div>
           <div className="text-yellow-300 text-xs">
-            Intraday trading involves substantial risk. This AI analysis is for educational purposes only.
+            {selectedTimeframe} trading involves substantial risk. This AI analysis is for educational purposes only.
           </div>
         </div>
       </div>

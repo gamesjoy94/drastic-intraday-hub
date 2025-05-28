@@ -33,11 +33,13 @@ export const useMarketAnalysis = () => {
     setConnectionError(false);
     setLastAnalysisTime(now);
     
-    console.log(`Starting manual Gold Trading analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
+    console.log(`useMarketAnalysis: Starting Gold Trading analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
     
     try {
       // Always use XAU/USD format for the API
       const apiSymbol = 'XAU/USD';
+      
+      console.log(`useMarketAnalysis: Sending analysis request with timeframe: ${selectedTimeframe}`);
       
       const { data, error } = await supabase.functions.invoke('analyze-market', {
         body: { 
@@ -65,13 +67,15 @@ export const useMarketAnalysis = () => {
       setAnalysisData(data);
       setConnectionError(false);
 
+      console.log(`useMarketAnalysis: Analysis completed for ${selectedTimeframe} timeframe`);
+
       toast({
         title: "Analysis Complete",
-        description: `Gold trading analysis completed successfully.`,
+        description: `Gold trading analysis completed for ${selectedTimeframe} timeframe.`,
       });
 
     } catch (error) {
-      console.error('Gold Trading analysis failed:', error);
+      console.error('useMarketAnalysis: Gold Trading analysis failed:', error);
       setConnectionError(true);
       
       const errorMessage = error.message || 'Unknown error';
