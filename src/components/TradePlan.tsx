@@ -1,3 +1,4 @@
+
 interface TradePlanProps {
   tradePlan: any;
   selectedTimeframe?: string;
@@ -32,14 +33,21 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
     return 'bg-red-600';
   };
 
+  // Helper function to safely render values
+  const renderValue = (value: any): string => {
+    if (value === null || value === undefined) return 'N/A';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
   return (
     <div className="p-4 flex-1 custom-scrollbar overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-200">
           Smart Momentum Scalping {selectedTimeframe && `(${selectedTimeframe})`}
         </h3>
-        <div className={`px-2 py-1 rounded text-xs font-medium ${getConfidenceColor(tradePlan.confidence)}`}>
-          {tradePlan.confidence}% Confidence
+        <div className={`px-2 py-1 rounded text-xs font-medium ${getConfidenceColor(tradePlan.confidence || 0)}`}>
+          {renderValue(tradePlan.confidence)}% Confidence
         </div>
       </div>
       
@@ -48,11 +56,11 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
         <div className="bg-slate-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-300 text-sm">Trade Direction</span>
-            <span className={`px-3 py-1 rounded text-sm font-bold ${getDirectionColor(tradePlan.direction)}`}>
-              {tradePlan.direction}
+            <span className={`px-3 py-1 rounded text-sm font-bold ${getDirectionColor(renderValue(tradePlan.direction))}`}>
+              {renderValue(tradePlan.direction)}
             </span>
           </div>
-          <div className="text-xs text-slate-400">{tradePlan.timing}</div>
+          <div className="text-xs text-slate-400">{renderValue(tradePlan.timing)}</div>
         </div>
 
         {/* Trade Levels */}
@@ -61,23 +69,23 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-slate-400">Entry</span>
-              <span className="text-blue-400 font-semibold">${parseFloat(tradePlan.entry).toFixed(2)}</span>
+              <span className="text-blue-400 font-semibold">${parseFloat(tradePlan.entry || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Stop Loss</span>
-              <span className="text-red-400 font-semibold">${parseFloat(tradePlan.stopLoss).toFixed(2)}</span>
+              <span className="text-red-400 font-semibold">${parseFloat(tradePlan.stopLoss || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Take Profit</span>
-              <span className="text-green-400 font-semibold">${parseFloat(tradePlan.takeProfit).toFixed(2)}</span>
+              <span className="text-green-400 font-semibold">${parseFloat(tradePlan.takeProfit || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between border-t border-slate-600 pt-2">
               <span className="text-slate-400">Risk:Reward</span>
-              <span className="text-white font-semibold">{tradePlan.riskReward}</span>
+              <span className="text-white font-semibold">{renderValue(tradePlan.riskReward)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Position Size</span>
-              <span className="text-blue-300 font-semibold">{tradePlan.positionSize}</span>
+              <span className="text-blue-300 font-semibold">{renderValue(tradePlan.positionSize)}</span>
             </div>
           </div>
         </div>
@@ -89,7 +97,7 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
             {tradePlan.indicators && Object.entries(tradePlan.indicators).map(([key, value]) => (
               <div key={key} className="flex justify-between text-sm">
                 <span className="text-slate-400 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                <span className="text-slate-200 font-mono">{value as string}</span>
+                <span className="text-slate-200 font-mono">{renderValue(value)}</span>
               </div>
             ))}
           </div>
@@ -99,7 +107,7 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
         <div className="bg-slate-700 rounded-lg p-4">
           <h4 className="font-semibold mb-3 text-slate-200">AI Analysis</h4>
           <p className="text-sm text-slate-300 leading-relaxed">
-            {tradePlan.strategy}
+            {renderValue(tradePlan.strategy)}
           </p>
         </div>
 
@@ -107,7 +115,7 @@ const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
         <div className="bg-slate-700 rounded-lg p-4">
           <h4 className="font-semibold mb-3 text-slate-200">Risk Assessment</h4>
           <p className="text-sm text-slate-300 leading-relaxed">
-            {tradePlan.risks}
+            {renderValue(tradePlan.risks)}
           </p>
         </div>
 
