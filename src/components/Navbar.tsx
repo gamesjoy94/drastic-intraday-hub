@@ -76,17 +76,21 @@ const Navbar = ({
                 </span>
               </div>
             )}
-            
-            {/* Timeframe Selector */}
-            <div className="flex items-center gap-1 bg-slate-800/50 rounded-lg border border-slate-600 p-1">
+          </div>
+        </div>
+        
+        {/* Center - Prominent Timeframe Selector */}
+        <div className="flex items-center justify-center flex-1 max-w-md mx-4">
+          <div className="bg-slate-800 rounded-xl border-2 border-yellow-400/30 p-1.5 shadow-lg backdrop-blur-sm">
+            <div className="flex items-center gap-1">
               {timeframes.map((tf) => (
                 <button
                   key={tf.value}
                   onClick={() => onTimeframeChange(tf.value)}
-                  className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 min-w-[40px] ${
                     selectedTimeframe === tf.value
-                      ? 'bg-yellow-400 text-slate-900'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                      ? 'bg-yellow-400 text-slate-900 shadow-lg scale-105'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-700/70'
                   }`}
                 >
                   {tf.label}
