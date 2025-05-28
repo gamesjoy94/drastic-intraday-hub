@@ -30,66 +30,68 @@ const Navbar = ({
   
   return (
     <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-3 lg:px-6 py-3 lg:py-4 shadow-lg">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 lg:gap-6 min-w-0">
-          {/* Professional Logo with Initials */}
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg p-2 lg:p-3 shadow-lg">
+      <div className="flex items-center justify-between gap-2 lg:gap-4">
+        {/* Left Section - Logo and Brand */}
+        <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-shrink-0">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg p-2 lg:p-3 shadow-lg flex-shrink-0">
               <div className="text-slate-900 font-bold text-sm lg:text-lg leading-none">
                 ED
               </div>
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-lg lg:text-2xl font-bold text-yellow-400 truncate">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base lg:text-2xl font-bold text-yellow-400 truncate">
                 E.DRASTIC pro
               </h1>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 hidden sm:block">
                   by E.drastic
                 </span>
-                <div className="hidden md:flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
+                <div className="hidden lg:flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
                   <Zap className="w-3 h-3" />
                   <span className="font-medium">Precision. Profit. Performance.</span>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2 lg:gap-4 min-w-0">
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-yellow-400" />
-              <div className="text-base lg:text-lg font-semibold text-yellow-300">
-                {selectedSymbol}
-              </div>
+        </div>
+
+        {/* Center Section - Symbol and Price Info */}
+        <div className="flex items-center gap-2 lg:gap-4 min-w-0 flex-1 justify-center">
+          <div className="flex items-center gap-1">
+            <TrendingUp className="w-4 h-4 text-yellow-400" />
+            <div className="text-base lg:text-lg font-semibold text-yellow-300">
+              {selectedSymbol}
             </div>
-            {currentPrice > 0 && (
-              <div className="flex items-center gap-1 lg:gap-2 min-w-0">
-                <span className="text-lg lg:text-2xl font-bold truncate text-white">
-                  ${currentPrice.toFixed(2)}
-                </span>
-                <span className={`text-xs lg:text-sm font-medium px-2 py-1 rounded-full ${
-                  priceChange >= 0 
-                    ? 'text-green-400 bg-green-400/10' 
-                    : 'text-red-400 bg-red-400/10'
-                }`}>
-                  {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-                </span>
-              </div>
-            )}
           </div>
+          {currentPrice > 0 && (
+            <div className="flex items-center gap-1 lg:gap-2 min-w-0">
+              <span className="text-lg lg:text-2xl font-bold truncate text-white">
+                ${currentPrice.toFixed(2)}
+              </span>
+              <span className={`text-xs lg:text-sm font-medium px-2 py-1 rounded-full ${
+                priceChange >= 0 
+                  ? 'text-green-400 bg-green-400/10' 
+                  : 'text-red-400 bg-red-400/10'
+              }`}>
+                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+              </span>
+            </div>
+          )}
         </div>
         
-        <div className="flex items-center gap-2 lg:gap-4">
-          {/* Timeframe Selector - Moved to right side */}
-          <div className="bg-slate-800 rounded-xl border-2 border-yellow-400/30 p-1.5 shadow-lg backdrop-blur-sm">
-            <div className="flex items-center gap-1">
+        {/* Right Section - Controls */}
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+          {/* Timeframe Selector - Compact design for space efficiency */}
+          <div className="bg-slate-800 rounded-lg border border-yellow-400/30 p-1 shadow-lg">
+            <div className="flex items-center gap-0.5">
               {timeframes.map((tf) => (
                 <button
                   key={tf.value}
                   onClick={() => onTimeframeChange(tf.value)}
-                  className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 min-w-[40px] ${
+                  className={`px-2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 min-w-[32px] ${
                     selectedTimeframe === tf.value
-                      ? 'bg-yellow-400 text-slate-900 shadow-lg scale-105'
+                      ? 'bg-yellow-400 text-slate-900 shadow-md'
                       : 'text-slate-300 hover:text-white hover:bg-slate-700/70'
                   }`}
                 >
@@ -99,21 +101,23 @@ const Navbar = ({
             </div>
           </div>
           
-          {/* Mobile motto */}
-          <div className="md:hidden flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
+          {/* Mobile motto - Compact */}
+          <div className="lg:hidden flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
             <Zap className="w-3 h-3" />
             <span className="font-medium">P³</span>
           </div>
           
-          <div className="hidden sm:flex items-center gap-2 text-slate-400 bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-600">
+          {/* Time Display */}
+          <div className="hidden sm:flex items-center gap-2 text-slate-400 bg-slate-800/50 px-2 lg:px-3 py-2 rounded-lg border border-slate-600">
             <Clock className="w-4 h-4" />
             <span className="text-xs lg:text-sm font-medium">{currentTime}</span>
           </div>
           
-          <div className="flex items-center gap-1 lg:gap-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+          {/* Live Market Indicator */}
+          <div className="flex items-center gap-1 lg:gap-2 bg-green-500/10 px-2 lg:px-3 py-2 rounded-lg border border-green-500/20">
             <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs lg:text-sm text-green-400 font-medium hidden sm:inline">
-              Live Market
+            <span className="text-xs lg:text-sm text-green-400 font-medium hidden md:inline">
+              Live
             </span>
           </div>
         </div>
