@@ -16,8 +16,22 @@ const TradingViewWidget = ({
 }: TradingViewWidgetProps) => {
   const widgetRef = useRef<HTMLDivElement>(null);
 
+  // Convert our timeframe format to TradingView format
+  const convertToTradingViewInterval = (tf: string) => {
+    switch (tf) {
+      case '1min': return '1';
+      case '5min': return '5';
+      case '15min': return '15';
+      case '30min': return '30';
+      case '1h': return '60';
+      case '4h': return '240';
+      case '1D': return 'D';
+      default: return '5'; // Default to 5 min
+    }
+  };
+
   useEffect(() => {
-    console.log('TradingViewWidget: Loading TradingView widget for XAUUSD');
+    console.log(`TradingViewWidget: Loading TradingView widget for XAUUSD on ${timeframe} timeframe`);
     
     if (!widgetRef.current) {
       console.log('TradingViewWidget: Widget ref not available');
@@ -40,11 +54,14 @@ const TradingViewWidget = ({
       script.type = 'text/javascript';
       script.async = true;
       
-      // Try multiple symbol formats for better compatibility
+      // Convert timeframe to TradingView format
+      const tvInterval = convertToTradingViewInterval(timeframe);
+      console.log(`TradingViewWidget: Using TradingView interval: ${tvInterval} for timeframe: ${timeframe}`);
+      
       const config = {
         autosize: true,
-        symbol: "TVC:GOLD", // Using TVC:GOLD which is more reliable
-        interval: timeframe === '5min' ? '5' : timeframe,
+        symbol: "TVC:GOLD",
+        interval: tvInterval,
         timezone: "Etc/UTC",
         theme: "dark",
         style: "1",
@@ -54,7 +71,7 @@ const TradingViewWidget = ({
         gridColor: "rgba(71, 85, 105, 0.5)",
         withdateranges: true,
         hide_side_toolbar: false,
-        allow_symbol_change: true, // Allow symbol change for better flexibility
+        allow_symbol_change: true,
         details: true,
         hotlist: false,
         calendar: false,
@@ -65,11 +82,11 @@ const TradingViewWidget = ({
       script.innerHTML = JSON.stringify(config);
 
       script.onload = () => {
-        console.log('TradingViewWidget: TradingView Gold chart loaded successfully');
+        console.log(`TradingViewWidget: TradingView Gold chart loaded successfully on ${timeframe} timeframe`);
         setTimeout(() => {
           onLoadingChange(false);
           onErrorChange(false);
-        }, 3000); // Increased timeout for better loading
+        }, 3000);
       };
 
       script.onerror = (error) => {
@@ -85,7 +102,7 @@ const TradingViewWidget = ({
       const fallbackTimeout = setTimeout(() => {
         console.log('TradingViewWidget: Fallback timeout reached');
         onLoadingChange(false);
-      }, 20000); // Increased timeout
+      }, 20000);
 
       return () => {
         clearTimeout(fallbackTimeout);

@@ -9,9 +9,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMarketAnalysis } from '@/hooks/useMarketAnalysis';
 
 const TradingDashboard = () => {
-  // Fixed to XAUUSD only
+  // Fixed to XAUUSD but now support multiple timeframes
   const selectedSymbol = 'XAUUSD';
-  const selectedTimeframe = '5min';
+  const [selectedTimeframe, setSelectedTimeframe] = useState('5min');
 
   const isMobile = useIsMobile();
 
@@ -36,6 +36,11 @@ const TradingDashboard = () => {
     handleRetryConnection(selectedSymbol, selectedTimeframe);
   };
 
+  const handleTimeframeChange = (newTimeframe: string) => {
+    console.log(`TradingDashboard: Changing timeframe from ${selectedTimeframe} to ${newTimeframe}`);
+    setSelectedTimeframe(newTimeframe);
+  };
+
   return (
     <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0">
@@ -52,6 +57,8 @@ const TradingDashboard = () => {
             selectedSymbol={selectedSymbol}
             currentPrice={currentPrice}
             priceChange={priceChange}
+            selectedTimeframe={selectedTimeframe}
+            onTimeframeChange={handleTimeframeChange}
           />
           
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
