@@ -79,8 +79,8 @@ const Navbar = ({
           </div>
         </div>
         
-        {/* Center - Prominent Timeframe Selector */}
-        <div className="flex items-center justify-center flex-1 max-w-md mx-4">
+        <div className="flex items-center gap-2 lg:gap-4">
+          {/* Timeframe Selector - Moved to right side */}
           <div className="bg-slate-800 rounded-xl border-2 border-yellow-400/30 p-1.5 shadow-lg backdrop-blur-sm">
             <div className="flex items-center gap-1">
               {timeframes.map((tf) => (
@@ -98,9 +98,7 @@ const Navbar = ({
               ))}
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2 lg:gap-4">
+          
           {/* Mobile motto */}
           <div className="md:hidden flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
             <Zap className="w-3 h-3" />
