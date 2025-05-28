@@ -31,7 +31,7 @@ const MobileAnalysisSheet = ({ selectedSymbol, selectedTimeframe, analysisData, 
             analysisData={analysisData}
           />
           <LivePatternRecognition currentPrice={currentPrice} />
-          <TradePlan tradePlan={tradePlan} />
+          <TradePlan tradePlan={tradePlan} selectedTimeframe={selectedTimeframe} />
         </div>
       </SheetContent>
     </Sheet>

@@ -23,7 +23,7 @@ const RightPanel = ({ selectedSymbol, selectedTimeframe, analysisData, tradePlan
           analysisData={analysisData}
         />
         <LivePatternRecognition currentPrice={currentPrice} />
-        <TradePlan tradePlan={tradePlan} />
+        <TradePlan tradePlan={tradePlan} selectedTimeframe={selectedTimeframe} />
       </div>
     </div>
   );

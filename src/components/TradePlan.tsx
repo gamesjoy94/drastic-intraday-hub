@@ -1,13 +1,15 @@
-
 interface TradePlanProps {
   tradePlan: any;
+  selectedTimeframe?: string;
 }
 
-const TradePlan = ({ tradePlan }: TradePlanProps) => {
+const TradePlan = ({ tradePlan, selectedTimeframe }: TradePlanProps) => {
   if (!tradePlan) {
     return (
       <div className="p-4 flex-1">
-        <h3 className="text-lg font-semibold mb-4 text-slate-200">Smart Momentum Scalping</h3>
+        <h3 className="text-lg font-semibold mb-4 text-slate-200">
+          Smart Momentum Scalping {selectedTimeframe && `(${selectedTimeframe})`}
+        </h3>
         <div className="bg-slate-700 rounded-lg p-6 text-center">
           <div className="text-slate-400 mb-2">No analysis yet</div>
           <div className="text-sm text-slate-500">Click "Analyze Market" to generate an AI-powered trade plan</div>
@@ -33,7 +35,9 @@ const TradePlan = ({ tradePlan }: TradePlanProps) => {
   return (
     <div className="p-4 flex-1 custom-scrollbar overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-200">Smart Momentum Scalping</h3>
+        <h3 className="text-lg font-semibold text-slate-200">
+          Smart Momentum Scalping {selectedTimeframe && `(${selectedTimeframe})`}
+        </h3>
         <div className={`px-2 py-1 rounded text-xs font-medium ${getConfidenceColor(tradePlan.confidence)}`}>
           {tradePlan.confidence}% Confidence
         </div>
