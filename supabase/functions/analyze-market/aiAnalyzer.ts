@@ -21,11 +21,11 @@ Current Market State:
 - Timeframe: ${timeframe}
 
 MOMENTUM ANALYSIS:
-- EMA 8: $${technicalData.ema8?.toFixed(2) || 'N/A'}
-- EMA 21: $${technicalData.ema21?.toFixed(2) || 'N/A'}
+- EMA 8: $${technicalData.ema8?.[0]?.toFixed(2) || 'N/A'}
+- EMA 21: $${technicalData.ema21?.[0]?.toFixed(2) || 'N/A'}
 - EMA Crossover Signal: ${analysis.emaCrossover}
-- RSI: ${technicalData.rsi?.toFixed(1) || 'N/A'}
-- MACD: ${technicalData.macd?.toFixed(4) || 'N/A'}
+- RSI: ${technicalData.rsi?.[0]?.toFixed(1) || 'N/A'}
+- MACD: ${technicalData.macd?.[0]?.toFixed(4) || 'N/A'}
 - Volume Spike: ${analysis.volumeSpike}
 - VWAP Position: ${analysis.vwapPosition}
 
