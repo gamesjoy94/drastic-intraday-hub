@@ -20,16 +20,18 @@ serve(async (req) => {
 
   try {
     const { symbol, timeframe } = await req.json();
-    console.log(`Analyzing ${symbol} on ${timeframe} timeframe with Smart Momentum Scalping strategy`);
+    console.log(`Analyzing ${symbol} on ${timeframe} timeframe with REAL market data`);
 
-    // Fetch comprehensive market data
+    // Fetch comprehensive REAL market data
     const marketData = await fetchMarketData(symbol, timeframe);
     const { ohlcvData, ema8Data, ema21Data, rsiData, macdData, vwapData, atrData } = marketData;
 
-    // Extract current values and historical data
+    // Extract current values and historical data from REAL API responses
     const currentPrice = parseFloat(ohlcvData.values[0].close);
     const previousPrice = parseFloat(ohlcvData.values[1].close);
     const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+
+    console.log(`REAL market data: ${symbol} at $${currentPrice.toFixed(2)} (${priceChange.toFixed(2)}%)`);
 
     const technicalData: TechnicalData = {
       ema8: ema8Data.values?.slice(0, 10).map((v: any) => parseFloat(v.ema)) || [],
@@ -44,17 +46,22 @@ serve(async (req) => {
       ohlcv: ohlcvData.values.slice(0, 50)
     };
 
-    // Calculate Smart Momentum Scalping signals
+    // Calculate Smart Momentum Scalping signals from REAL data
     const analysis = analyzeSmartMomentumScalping(technicalData, currentPrice);
+    console.log(`Real technical analysis complete: ${analysis.marketBias} bias, ${analysis.confidenceScore}% confidence`);
     
-    // Add Pattern Recognition Analysis
+    // Add Pattern Recognition Analysis from REAL data
     const patternData = analyzePatterns(technicalData, currentPrice);
+    console.log(`Pattern analysis: ${patternData.pattern} (${patternData.probability}% probability)`);
 
-    // Get AI analysis
+    // Attempt to get AI analysis first
     let tradePlan = await getAITradePlan(symbol, timeframe, currentPrice, priceChange, technicalData, analysis, patternData);
     
     if (!tradePlan) {
-      tradePlan = generateFallbackTradePlan(analysis, currentPrice, technicalData.atr[0]);
+      console.log('AI analysis failed, using enhanced rule-based analysis with REAL data');
+      tradePlan = generateFallbackTradePlan(analysis, currentPrice, technicalData.atr[0], patternData);
+    } else {
+      console.log('AI analysis successful, using AI-generated trade plan');
     }
 
     const result = {
@@ -68,11 +75,11 @@ serve(async (req) => {
         stopLoss: parseFloat(tradePlan.stopLoss) || currentPrice * 0.98,
         takeProfit: parseFloat(tradePlan.takeProfit) || currentPrice * 1.02,
         riskReward: tradePlan.riskReward || "1:1.5",
-        positionSize: tradePlan.positionSize || "1-2%",
+        positionSize: tradePlan.positionSize || "0%",
         timing: tradePlan.timing || "Monitor for entry",
         risks: tradePlan.risks || "Standard market risks apply",
-        strategy: tradePlan.strategy || `${analysis.summary} Combined with ${patternData.pattern} pattern.`,
-        confidence: parseInt(tradePlan.confidence) || Math.min(analysis.confidenceScore + patternData.probability, 100) / 2,
+        strategy: tradePlan.strategy || `${analysis.summary} Combined with ${patternData.pattern} pattern analysis.`,
+        confidence: parseInt(tradePlan.confidence) || analysis.confidenceScore,
         indicators: tradePlan.indicators || analysis.indicators
       },
       technicalData: {
@@ -84,17 +91,19 @@ serve(async (req) => {
         vwap: technicalData.vwap[0]?.toFixed(2) || 'N/A',
         atr: technicalData.atr[0]?.toFixed(2) || 'N/A',
         volume: technicalData.volume[0]?.toLocaleString() || 'N/A'
-      }
+      },
+      dataSource: 'REAL_TIME',
+      analysisMethod: tradePlan.strategy ? 'AI_ENHANCED' : 'RULE_BASED'
     };
 
-    console.log('Smart Momentum + Pattern Recognition analysis completed successfully:', result);
+    console.log('REAL market analysis completed successfully. Data source: TwelveData API');
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in analysis:', error);
+    console.error('Error in REAL market analysis:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -102,7 +111,8 @@ serve(async (req) => {
         priceChange: 0,
         tradePlan: null,
         analysis: null,
-        patternData: null
+        patternData: null,
+        dataSource: 'ERROR'
       }), 
       {
         status: 500,

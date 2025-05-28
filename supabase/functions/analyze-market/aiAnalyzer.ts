@@ -11,60 +11,64 @@ export async function getAITradePlan(
   patternData: any
 ) {
   if (!OPENAI_API_KEY) {
-    console.log('OpenAI API key not found, falling back to rule-based analysis');
+    console.log('OpenAI API key not found, falling back to enhanced rule-based analysis');
     return null;
   }
 
   try {
     console.log('Making OpenAI API request...');
     
-    const prompt = `You are a professional trading analyst. Based on the following data for ${symbol} on ${timeframe} timeframe, provide a detailed trade plan.
+    const prompt = `You are a professional gold trading analyst. Based on the following REAL market data for ${symbol} on ${timeframe} timeframe, provide a detailed trade plan.
 
-Current Market Data:
+REAL MARKET DATA:
 - Symbol: ${symbol}
 - Timeframe: ${timeframe}
-- Current Price: $${currentPrice}
+- Current Price: $${currentPrice.toFixed(2)}
 - Price Change: ${priceChange.toFixed(2)}%
 
-Technical Analysis:
-- Smart Momentum Analysis: ${analysis.summary}
+REAL TECHNICAL ANALYSIS:
 - Market Bias: ${analysis.marketBias}
 - Confidence: ${analysis.confidenceScore}%
-- EMA8: ${technicalData.ema8[0]?.toFixed(2) || 'N/A'}
-- EMA21: ${technicalData.ema21[0]?.toFixed(2) || 'N/A'}
-- RSI: ${technicalData.rsi[0]?.toFixed(1) || 'N/A'}
-- MACD: ${technicalData.macd[0]?.toFixed(4) || 'N/A'}
-- VWAP: ${technicalData.vwap[0]?.toFixed(2) || 'N/A'}
-- ATR: ${technicalData.atr[0]?.toFixed(2) || 'N/A'}
+- Long Score: ${analysis.longScore}/5
+- Short Score: ${analysis.shortScore}/5
+- EMA8: $${technicalData.ema8[0]?.toFixed(2) || 'N/A'}
+- EMA21: $${technicalData.ema21[0]?.toFixed(2) || 'N/A'}
+- RSI: ${technicalData.rsi[0]?.toFixed(1) || 'N/A'} (${analysis.rsiDirection})
+- MACD: ${technicalData.macd[0]?.toFixed(4) || 'N/A'} (${analysis.macdSignal})
+- VWAP: $${technicalData.vwap[0]?.toFixed(2) || 'N/A'} (Price ${analysis.vwapPosition})
+- ATR: $${technicalData.atr[0]?.toFixed(2) || 'N/A'}
+- Volume: ${analysis.volumeSpike ? 'HIGH' : 'NORMAL'}
 
-Pattern Recognition:
+PATTERN ANALYSIS:
 - Pattern: ${patternData.pattern}
 - Direction: ${patternData.direction}
 - Strength: ${patternData.strength}
 - Probability: ${patternData.probability}%
-- Support: ${patternData.support}
-- Resistance: ${patternData.resistance}
+- Support: $${patternData.support}
+- Resistance: $${patternData.resistance}
+- Breakout Level: $${patternData.breakoutLevel}
+- Target: $${patternData.target}
 
-Please provide a trade plan in the following JSON format (respond with ONLY the JSON, no markdown formatting):
+Provide a trade plan in JSON format ONLY (no markdown):
 
 {
-  "direction": "BUY/SELL/NO TRADE",
-  "entry": number,
+  "direction": "LONG/SHORT/NO TRADE",
+  "entry": ${currentPrice},
   "stopLoss": number,
   "takeProfit": number,
-  "riskReward": number,
-  "positionSize": "string",
-  "timing": "${timeframe}",
-  "risks": ["risk1", "risk2"],
-  "strategy": "detailed strategy explanation",
-  "confidence": "High/Medium/Low",
+  "riskReward": "1:X",
+  "positionSize": "X%",
+  "timing": "description",
+  "risks": "risk description",
+  "strategy": "detailed explanation based on REAL data",
+  "confidence": number,
   "indicators": {
-    "EMA": {"EMA_8": number, "EMA_21": number},
-    "RSI": number,
-    "MACD": number,
-    "VWAP": "Above/Below",
-    "Volume_Spike": boolean,
-    "Pattern": "string"
+    "EMA": {"EMA_8": ${technicalData.ema8[0] || currentPrice}, "EMA_21": ${technicalData.ema21[0] || currentPrice}},
+    "RSI": ${technicalData.rsi[0] || 50},
+    "MACD": ${technicalData.macd[0] || 0},
+    "VWAP": "${analysis.vwapPosition}",
+    "Volume_Spike": ${analysis.volumeSpike},
+    "Pattern": "${patternData.pattern}"
   }
 }`;
 
@@ -75,25 +79,27 @@ Please provide a trade plan in the following JSON format (respond with ONLY the 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are a professional trading analyst. Respond with valid JSON only, no markdown formatting.'
+            content: 'You are a professional gold trading analyst. Respond with valid JSON only, no markdown formatting. Base your analysis strictly on the provided REAL market data.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.1,
+        max_tokens: 800,
+        temperature: 0.2,
       }),
     });
 
     console.log(`OpenAI response status: ${response.status}`);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`OpenAI API error: ${response.status} - ${errorText}`);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
