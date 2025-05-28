@@ -26,7 +26,7 @@ const MainContent = ({
   onAnalyze
 }: MainContentProps) => {
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 min-h-0">
       <div className="flex-1 min-h-0">
         <ChartSection 
           symbol={selectedSymbol}
@@ -38,8 +38,8 @@ const MainContent = ({
         />
       </div>
       
-      {/* Always visible analysis button */}
-      <div className="p-3 lg:p-4 border-t border-slate-700 bg-slate-900 relative z-10">
+      {/* Always visible analysis button with proper padding */}
+      <div className="p-3 lg:p-4 border-t border-slate-700 bg-slate-900 relative z-10 pb-safe">
         <button
           onClick={onAnalyze}
           disabled={isAnalyzing}

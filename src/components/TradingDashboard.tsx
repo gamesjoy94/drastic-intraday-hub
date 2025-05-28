@@ -54,7 +54,7 @@ const TradingDashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
         {/* Connection Error Banner - Only show when there's an error */}
         {connectionError && (
           <div className="relative z-50">
@@ -62,8 +62,8 @@ const TradingDashboard = () => {
           </div>
         )}
         
-        {/* Main content with proper spacing */}
-        <div className={`flex-1 flex flex-col ${connectionError ? 'pt-12' : ''}`}>
+        {/* Main content with proper spacing and height */}
+        <div className={`flex-1 flex flex-col min-h-0 ${connectionError ? 'pt-12' : ''}`}>
           <Navbar 
             selectedSymbol={selectedSymbol}
             currentPrice={currentPrice}
@@ -72,7 +72,7 @@ const TradingDashboard = () => {
             onTimeframeChange={handleTimeframeChange}
           />
           
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
             {/* Main Chart Section */}
             <MainContent
               selectedSymbol={selectedSymbol}
