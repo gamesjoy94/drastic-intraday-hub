@@ -79,7 +79,7 @@ const Navbar = ({
         {/* Bottom row - Timeframe and Controls */}
         <div className="flex items-center justify-between gap-2">
           {/* Timeframe Selector - Mobile optimized */}
-          <div className="bg-slate-800 rounded-lg border border-yellow-400/30 p-0.5 shadow-lg flex-1 max-w-xs">
+          <div className="bg-slate-800 rounded-lg border border-yellow-400/30 p-0.5 shadow-lg flex-1 min-w-0">
             <div className="flex items-center gap-0.5 overflow-x-auto">
               {timeframes.map((tf) => (
                 <button
@@ -97,14 +97,14 @@ const Navbar = ({
             </div>
           </div>
           
-          {/* Right Controls - Mobile */}
-          <div className="flex items-center gap-1">
-            <div className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-1.5 py-1 rounded-full border border-yellow-400/20">
+          {/* Right Controls - Mobile - Fixed layout */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20">
               <Zap className="w-3 h-3" />
               <span className="font-medium">P³</span>
             </div>
             
-            <div className="flex items-center gap-1 bg-green-500/10 px-1.5 py-1 rounded-lg border border-green-500/20">
+            <div className="flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-xs text-green-400 font-medium">Live</span>
             </div>
