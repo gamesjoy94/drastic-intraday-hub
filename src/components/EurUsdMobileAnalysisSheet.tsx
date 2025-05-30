@@ -7,6 +7,8 @@ import MarketData from './MarketData';
 import EurUsdAnalysisPanel from './EurUsdAnalysisPanel';
 import TradePlan from './TradePlan';
 import EurUsdPatternRecognition from './EurUsdPatternRecognition';
+import EurUsdSmartPlans from './EurUsdSmartPlans';
+import EurUsdAccuracyBooster from './EurUsdAccuracyBooster';
 
 interface EurUsdMobileAnalysisSheetProps {
   selectedSymbol: string;
@@ -49,6 +51,15 @@ const EurUsdMobileAnalysisSheet = ({
             analysisData={analysisData}
           />
           <EurUsdPatternRecognition currentPrice={currentPrice} />
+          <EurUsdSmartPlans 
+            analysisData={analysisData}
+            tradePlan={tradePlan}
+            currentPrice={currentPrice}
+          />
+          <EurUsdAccuracyBooster 
+            analysisData={analysisData}
+            currentPrice={currentPrice}
+          />
           <TradePlan tradePlan={tradePlan} selectedTimeframe={selectedTimeframe} />
         </div>
       </SheetContent>

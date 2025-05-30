@@ -3,6 +3,8 @@ import MarketData from './MarketData';
 import EurUsdAnalysisPanel from './EurUsdAnalysisPanel';
 import TradePlan from './TradePlan';
 import EurUsdPatternRecognition from './EurUsdPatternRecognition';
+import EurUsdSmartPlans from './EurUsdSmartPlans';
+import EurUsdAccuracyBooster from './EurUsdAccuracyBooster';
 
 interface EurUsdRightPanelProps {
   selectedSymbol: string;
@@ -23,6 +25,15 @@ const EurUsdRightPanel = ({ selectedSymbol, selectedTimeframe, analysisData, tra
           analysisData={analysisData}
         />
         <EurUsdPatternRecognition currentPrice={currentPrice} />
+        <EurUsdSmartPlans 
+          analysisData={analysisData}
+          tradePlan={tradePlan}
+          currentPrice={currentPrice}
+        />
+        <EurUsdAccuracyBooster 
+          analysisData={analysisData}
+          currentPrice={currentPrice}
+        />
         <TradePlan tradePlan={tradePlan} selectedTimeframe={selectedTimeframe} />
       </div>
     </div>
