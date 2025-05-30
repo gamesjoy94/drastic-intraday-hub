@@ -49,7 +49,7 @@ const Index = () => {
               className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3"
             >
               <BarChart3 className="w-5 h-5 mr-2" />
-              Start General Analysis
+              Start XAUUSD Analysis
             </Button>
             <Link to="/eurusd">
               <Button 
