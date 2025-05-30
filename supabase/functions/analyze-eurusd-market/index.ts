@@ -1,10 +1,10 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { TechnicalData } from '../analyze-market/types.ts';
-import { fetchMarketData } from '../analyze-market/dataFetcher.ts';
+import { TechnicalData } from './types.ts';
+import { fetchMarketData } from './dataFetcher.ts';
 import { analyzeEurUsdTrendReversal } from './eurUsdTrendAnalyzer.ts';
-import { analyzePatterns } from '../analyze-market/patternAnalyzer.ts';
+import { analyzePatterns } from './patternAnalyzer.ts';
 import { getEurUsdAITradePlan } from './eurUsdAIAnalyzer.ts';
 import { generateEurUsdFallbackTradePlan } from './eurUsdFallbackGenerator.ts';
 
