@@ -18,12 +18,12 @@ const EurUsdPatternRecognition = ({ currentPrice }: EurUsdPatternRecognitionProp
       <CardContent className="space-y-3">
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-slate-400">Live Price:</span>
+            <span className="text-slate-400">Live EUR/USD Price:</span>
             <span className="text-white font-mono">${currentPrice.toFixed(5)}</span>
           </div>
           
           <div className="space-y-1">
-            <h4 className="text-slate-300 text-xs font-medium">Real-Time Strategy Signals:</h4>
+            <h4 className="text-slate-300 text-xs font-medium">Real-Time EUR/USD Strategy Signals:</h4>
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-400">EMA8/21 Cross (Real):</span>
@@ -47,13 +47,13 @@ const EurUsdPatternRecognition = ({ currentPrice }: EurUsdPatternRecognitionProp
 
         <div className="pt-2 border-t border-slate-700">
           <p className="text-slate-400 text-xs">
-            <strong className="text-green-400">REAL</strong> AI-Enhanced Trend Reversal strategy using live market data from Twelve Data API for EMA crossovers, MACD signals, RSI momentum, and volume confirmation.
+            <strong className="text-green-400">REAL</strong> AI-Enhanced EUR/USD Trend Reversal strategy using live market data from Twelve Data API for EMA crossovers, MACD signals, RSI momentum, and volume confirmation.
           </p>
         </div>
 
         <div className="flex items-center justify-center">
           <Badge variant="default" className="bg-green-600">
-            100% REAL MARKET DATA
+            100% REAL EUR/USD MARKET DATA
           </Badge>
         </div>
       </CardContent>
