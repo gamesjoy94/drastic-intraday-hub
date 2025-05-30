@@ -15,12 +15,12 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
       <Card className="bg-slate-800 border-slate-700 m-4">
         <CardHeader>
           <CardTitle className="text-white text-sm flex items-center gap-2">
-            🧠 AI-Enhanced Trend Reversal Analysis
-            <Badge variant="outline" className="text-xs">EUR/USD</Badge>
+            🧠 REAL AI-Enhanced Trend Reversal Analysis
+            <Badge variant="outline" className="text-xs">EUR/USD LIVE</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400 text-sm">Run analysis to see AI-enhanced trend reversal signals</p>
+          <p className="text-slate-400 text-sm">Run analysis to see real-time AI-enhanced trend reversal signals from live market data</p>
         </CardContent>
       </Card>
     );
@@ -48,11 +48,19 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
     <Card className="bg-slate-800 border-slate-700 m-4">
       <CardHeader>
         <CardTitle className="text-white text-sm flex items-center gap-2">
-          🧠 AI-Enhanced Trend Reversal Analysis
-          <Badge variant="outline" className="text-xs">EUR/USD</Badge>
+          🧠 REAL AI-Enhanced Trend Reversal Analysis
+          <Badge variant="outline" className="text-xs">EUR/USD LIVE</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Data Source Indicator */}
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300 text-sm">Data Source:</span>
+          <Badge variant="default" className="bg-green-600">
+            {analysisData.dataSource === 'REAL_TIME' ? 'LIVE MARKET DATA' : 'REAL DATA'}
+          </Badge>
+        </div>
+
         {/* Market Bias */}
         <div className="flex items-center justify-between">
           <span className="text-slate-300 text-sm">Market Bias:</span>
@@ -68,7 +76,7 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
         <div className="flex items-center justify-between">
           <span className="text-slate-300 text-sm">AI Confidence:</span>
           <Badge variant={analysis.confidenceScore >= 70 ? "default" : "secondary"}>
-            {analysis.confidenceScore}%
+            {analysis.confidenceScore}% (REAL)
           </Badge>
         </div>
 
@@ -76,28 +84,28 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
         <div className="grid grid-cols-2 gap-2">
           <div className="text-center">
             <div className="text-green-400 text-lg font-bold">{analysis.longScore}/5</div>
-            <div className="text-xs text-slate-400">Long Score</div>
+            <div className="text-xs text-slate-400">Long Score (Live)</div>
           </div>
           <div className="text-center">
             <div className="text-red-400 text-lg font-bold">{analysis.shortScore}/5</div>
-            <div className="text-xs text-slate-400">Short Score</div>
+            <div className="text-xs text-slate-400">Short Score (Live)</div>
           </div>
         </div>
 
-        {/* Technical Indicators */}
+        {/* Real Technical Indicators */}
         <div className="space-y-2">
-          <h4 className="text-slate-300 text-xs font-medium">Technical Signals:</h4>
+          <h4 className="text-slate-300 text-xs font-medium">Live Technical Signals:</h4>
           <div className="grid grid-cols-1 gap-1 text-xs">
             <div className="flex justify-between">
-              <span className="text-slate-400">EMA Trend:</span>
+              <span className="text-slate-400">EMA Trend (Real):</span>
               <span className="text-white">{analysis.emaCrossover || 'NONE'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">RSI Signal:</span>
+              <span className="text-slate-400">RSI (Live):</span>
               <span className="text-white">{analysis.rsiDirection}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">MACD:</span>
+              <span className="text-slate-400">MACD (Real):</span>
               <span className="text-white">{analysis.macdSignal}</span>
             </div>
             <div className="flex justify-between">
@@ -105,7 +113,7 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
               <span className="text-white">{analysis.vwapPosition}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Volume:</span>
+              <span className="text-slate-400">Volume (Live):</span>
               <span className={analysis.volumeSpike ? "text-green-400" : "text-slate-400"}>
                 {analysis.volumeSpike ? 'HIGH' : 'NORMAL'}
               </span>
@@ -116,15 +124,15 @@ const EurUsdAnalysisPanel = ({ symbol, timeframe, analysisData }: EurUsdAnalysis
         {/* Strategy Summary */}
         <div className="pt-2 border-t border-slate-700">
           <p className="text-slate-300 text-xs leading-relaxed">
-            {analysis.summary || 'AI-Enhanced Trend Reversal strategy analyzing multiple timeframe convergence for optimal entry points.'}
+            {analysis.summary || 'REAL AI-Enhanced Trend Reversal strategy analyzing live multiple timeframe convergence for optimal entry points.'}
           </p>
         </div>
 
-        {/* Data Source */}
+        {/* Analysis Method */}
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-500">Strategy:</span>
+          <span className="text-slate-500">Analysis Method:</span>
           <Badge variant="outline" className="text-xs">
-            Trend Reversal AI
+            {analysisData.analysisMethod === 'AI_ENHANCED' ? 'AI + REAL DATA' : 'REAL MARKET DATA'}
           </Badge>
         </div>
       </CardContent>
