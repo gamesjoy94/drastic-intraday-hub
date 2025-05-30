@@ -1,5 +1,5 @@
 
-import { SmartMomentumAnalysis, PatternData } from '../analyze-market/types.ts';
+import { SmartMomentumAnalysis, PatternData } from './types.ts';
 
 export function generateEurUsdFallbackTradePlan(
   analysis: SmartMomentumAnalysis, 

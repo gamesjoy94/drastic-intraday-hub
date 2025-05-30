@@ -6,13 +6,15 @@ interface TradingViewWidgetProps {
   widgetKey: number;
   onLoadingChange: (isLoading: boolean) => void;
   onErrorChange: (hasError: boolean) => void;
+  symbol?: string; // Add symbol prop to make it flexible
 }
 
 const TradingViewWidget = ({ 
   timeframe, 
   widgetKey, 
   onLoadingChange, 
-  onErrorChange 
+  onErrorChange,
+  symbol = "TVC:GOLD" // Default to Gold
 }: TradingViewWidgetProps) => {
   const widgetRef = useRef<HTMLDivElement>(null);
 
@@ -33,9 +35,18 @@ const TradingViewWidget = ({
     }
   };
 
+  // Get the appropriate symbol based on current route or prop
+  const getTradingViewSymbol = () => {
+    if (window.location.pathname.includes('/eurusd')) {
+      return "FX:EURUSD";
+    }
+    return symbol;
+  };
+
   useEffect(() => {
     const tvInterval = convertToTradingViewInterval(timeframe);
-    console.log(`TradingViewWidget: Loading TradingView widget for XAUUSD on ${timeframe} timeframe (TradingView interval: ${tvInterval})`);
+    const tradingViewSymbol = getTradingViewSymbol();
+    console.log(`TradingViewWidget: Loading TradingView widget for ${tradingViewSymbol} on ${timeframe} timeframe (TradingView interval: ${tvInterval})`);
     
     if (!widgetRef.current) {
       console.log('TradingViewWidget: Widget ref not available');
@@ -62,7 +73,7 @@ const TradingViewWidget = ({
       
       const config = {
         autosize: true,
-        symbol: "TVC:GOLD",
+        symbol: tradingViewSymbol,
         interval: tvInterval,
         timezone: "Etc/UTC",
         theme: "dark",
@@ -84,7 +95,7 @@ const TradingViewWidget = ({
       script.innerHTML = JSON.stringify(config);
 
       script.onload = () => {
-        console.log(`TradingViewWidget: TradingView Gold chart loaded successfully on ${timeframe} timeframe (interval: ${tvInterval})`);
+        console.log(`TradingViewWidget: TradingView chart loaded successfully for ${tradingViewSymbol} on ${timeframe} timeframe (interval: ${tvInterval})`);
         setTimeout(() => {
           onLoadingChange(false);
           onErrorChange(false);
@@ -115,7 +126,7 @@ const TradingViewWidget = ({
       onLoadingChange(false);
       onErrorChange(true);
     }
-  }, [widgetKey, timeframe, onLoadingChange, onErrorChange]);
+  }, [widgetKey, timeframe, symbol, onLoadingChange, onErrorChange]);
 
   return (
     <div

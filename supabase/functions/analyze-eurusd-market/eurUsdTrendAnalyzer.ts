@@ -1,5 +1,5 @@
 
-import { TechnicalData, SmartMomentumAnalysis } from '../analyze-market/types.ts';
+import { TechnicalData, SmartMomentumAnalysis } from './types.ts';
 
 export function analyzeEurUsdTrendReversal(data: TechnicalData, currentPrice: number): SmartMomentumAnalysis {
   console.log('Analyzing EUR/USD with AI-Enhanced Trend Reversal Strategy');
