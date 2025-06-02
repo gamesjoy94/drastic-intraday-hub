@@ -6,6 +6,7 @@ import { fetchMarketData } from './dataFetcher.ts';
 import { analyzeEurUsdTrendReversal } from './eurUsdTrendAnalyzer.ts';
 import { analyzePatterns } from './patternAnalyzer.ts';
 import { getEurUsdAITradePlan } from './eurUsdAIAnalyzer.ts';
+import { getAdvancedEurUsdAIAnalysis, generateEnhancedTradePlan } from './eurUsdAdvancedAI.ts';
 import { generateEurUsdFallbackTradePlan } from './eurUsdFallbackGenerator.ts';
 
 const corsHeaders = {
@@ -20,7 +21,7 @@ serve(async (req) => {
 
   try {
     const { symbol, timeframe, strategy } = await req.json();
-    console.log(`Analyzing EUR/USD with AI-Enhanced Trend Reversal Strategy on ${timeframe} timeframe`);
+    console.log(`Analyzing EUR/USD with ADVANCED AI-Enhanced Trend Reversal Strategy on ${timeframe} timeframe`);
 
     // Fetch comprehensive market data for EUR/USD
     const marketData = await fetchMarketData(symbol, timeframe);
@@ -54,21 +55,55 @@ serve(async (req) => {
     const patternData = analyzePatterns(technicalData, currentPrice);
     console.log(`EUR/USD pattern analysis: ${patternData.pattern} (${patternData.probability}% probability)`);
 
-    // Attempt to get AI analysis
+    // Market context for advanced AI
+    const marketContext = {
+      sessionTime: new Date().getHours(),
+      priceNearRoundNumbers: Math.abs(currentPrice - Math.round(currentPrice * 10000) / 10000) < 0.0001,
+      weeklyHigh: Math.max(...ohlcvData.values.slice(0, 35).map((v: any) => parseFloat(v.high))),
+      weeklyLow: Math.min(...ohlcvData.values.slice(0, 35).map((v: any) => parseFloat(v.low))),
+      averageVolume: technicalData.volume.slice(0, 20).reduce((sum, vol) => sum + vol, 0) / 20
+    };
+
+    // Get advanced AI analysis
+    console.log('Requesting advanced AI analysis for EUR/USD...');
+    const advancedAI = await getAdvancedEurUsdAIAnalysis(
+      symbol, 
+      timeframe, 
+      currentPrice, 
+      priceChange, 
+      technicalData, 
+      analysis, 
+      patternData,
+      marketContext
+    );
+
+    // Attempt to get basic AI analysis as fallback
     let tradePlan = await getEurUsdAITradePlan(symbol, timeframe, currentPrice, priceChange, technicalData, analysis, patternData);
     
     if (!tradePlan) {
-      console.log('EUR/USD AI analysis failed, using enhanced rule-based analysis');
+      console.log('Basic AI analysis failed, using enhanced rule-based analysis');
       tradePlan = generateEurUsdFallbackTradePlan(analysis, currentPrice, technicalData.atr[0], patternData);
-    } else {
-      console.log('EUR/USD AI analysis successful');
+    }
+
+    // Enhance trade plan with advanced AI if available
+    if (advancedAI) {
+      console.log('Enhancing trade plan with advanced AI analysis');
+      tradePlan = generateEnhancedTradePlan(tradePlan, advancedAI, currentPrice, technicalData);
     }
 
     const result = {
       currentPrice,
       priceChange,
-      analysis,
+      analysis: {
+        ...analysis,
+        // Add AI enhancements to analysis
+        aiEnhanced: !!advancedAI,
+        marketRegime: advancedAI?.marketRegime || 'UNKNOWN',
+        volatilityForecast: advancedAI?.volatilityForecast || 'MEDIUM',
+        aiConfidence: advancedAI?.aiConfidence || analysis.confidenceScore
+      },
       patternData,
+      advancedAI: advancedAI || null,
       tradePlan: {
         direction: tradePlan.direction || 'NO TRADE',
         entry: parseFloat(tradePlan.entry) || currentPrice,
@@ -80,7 +115,11 @@ serve(async (req) => {
         risks: tradePlan.risks || "Standard forex market risks apply",
         strategy: tradePlan.strategy || `${analysis.summary} Combined with AI-Enhanced Trend Reversal signals.`,
         confidence: parseInt(tradePlan.confidence) || analysis.confidenceScore,
-        indicators: tradePlan.indicators || analysis.indicators
+        indicators: tradePlan.indicators || analysis.indicators,
+        aiEnhanced: tradePlan.aiEnhanced || false,
+        aiInsights: tradePlan.aiInsights || null,
+        predictiveAnalysis: tradePlan.predictiveAnalysis || null,
+        advancedMetrics: tradePlan.advancedMetrics || null
       },
       technicalData: {
         ema8: technicalData.ema8[0]?.toFixed(5) || 'N/A',
@@ -93,18 +132,18 @@ serve(async (req) => {
         volume: technicalData.volume[0]?.toLocaleString() || 'N/A'
       },
       dataSource: 'REAL_TIME',
-      strategy: 'AI_ENHANCED_TREND_REVERSAL',
-      analysisMethod: tradePlan.strategy ? 'AI_ENHANCED' : 'RULE_BASED'
+      strategy: 'ADVANCED_AI_ENHANCED_TREND_REVERSAL',
+      analysisMethod: advancedAI ? 'ADVANCED_AI_MULTI_MODEL' : tradePlan.strategy ? 'AI_ENHANCED' : 'RULE_BASED'
     };
 
-    console.log('EUR/USD AI-Enhanced Trend Reversal analysis completed successfully');
+    console.log('EUR/USD Advanced AI-Enhanced Trend Reversal analysis completed successfully');
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in EUR/USD AI-Enhanced Trend Reversal analysis:', error);
+    console.error('Error in EUR/USD Advanced AI analysis:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -113,6 +152,7 @@ serve(async (req) => {
         tradePlan: null,
         analysis: null,
         patternData: null,
+        advancedAI: null,
         dataSource: 'ERROR'
       }), 
       {

@@ -9,6 +9,7 @@ import TradePlan from './TradePlan';
 import EurUsdPatternRecognition from './EurUsdPatternRecognition';
 import EurUsdSmartPlans from './EurUsdSmartPlans';
 import EurUsdAccuracyBooster from './EurUsdAccuracyBooster';
+import EurUsdAdvancedAI from './EurUsdAdvancedAI';
 
 interface EurUsdMobileAnalysisSheetProps {
   selectedSymbol: string;
@@ -41,7 +42,7 @@ const EurUsdMobileAnalysisSheet = ({
       </SheetTrigger>
       <SheetContent side="bottom" className="bg-slate-900 border-slate-700 h-[80vh]">
         <SheetHeader>
-          <SheetTitle className="text-white">EUR/USD AI-Enhanced Analysis</SheetTitle>
+          <SheetTitle className="text-white">EUR/USD Advanced AI Analysis</SheetTitle>
         </SheetHeader>
         <div className="mt-4 overflow-y-auto h-full pb-20">
           <MarketData symbol={selectedSymbol} />
@@ -49,6 +50,11 @@ const EurUsdMobileAnalysisSheet = ({
             symbol={selectedSymbol} 
             timeframe={selectedTimeframe}
             analysisData={analysisData}
+          />
+          <EurUsdAdvancedAI 
+            analysisData={analysisData}
+            tradePlan={tradePlan}
+            currentPrice={currentPrice}
           />
           <EurUsdPatternRecognition currentPrice={currentPrice} />
           <EurUsdSmartPlans 
