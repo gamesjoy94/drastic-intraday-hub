@@ -100,7 +100,7 @@ const EurUsdAdvancedAI = ({ analysisData, tradePlan, currentPrice }: EurUsdAdvan
                 <div className="text-xs text-slate-400 capitalize">
                   {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
                 </div>
-                <div className="text-sm font-medium text-white">{value}%</div>
+                <div className="text-sm font-medium text-white">{String(value)}%</div>
               </div>
             ))}
           </div>
