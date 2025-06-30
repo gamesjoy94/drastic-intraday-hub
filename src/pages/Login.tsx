@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -110,14 +111,6 @@ const Login = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-slate-700 rounded-lg">
-            <h3 className="text-sm font-medium text-slate-200 mb-2">Demo Credentials:</h3>
-            <div className="space-y-1 text-xs text-slate-400">
-              <div>Username: <span className="text-blue-400">admin</span> | Password: <span className="text-blue-400">letmein123</span></div>
-              <div>Username: <span className="text-blue-400">user1</span> | Password: <span className="text-blue-400">pass456</span></div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
