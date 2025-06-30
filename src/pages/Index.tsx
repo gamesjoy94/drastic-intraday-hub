@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, BarChart3, ArrowRight } from 'lucide-react';
+import { TrendingUp, BarChart3, ArrowRight, LogIn, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import TradingDashboard from '../components/TradingDashboard';
 
 const Index = () => {
   const [showDashboard, setShowDashboard] = useState(false);
+  const { isAuthenticated, currentUser, logout } = useAuth();
 
   if (showDashboard) {
     return <TradingDashboard />;
@@ -23,6 +25,29 @@ const Index = () => {
             <h1 className="text-2xl font-bold">AI Trading Platform</h1>
           </div>
           <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-green-400">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">Welcome, {currentUser}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-slate-600 text-white hover:bg-slate-700"
+                  onClick={logout}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
             <Link to="/eurusd">
               <Button variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
                 EUR/USD Analysis
