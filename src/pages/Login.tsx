@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,14 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +52,10 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-center p-4">
       {/* Background Logo */}
       <div className="absolute top-6 left-6">
-        <Link to="/" className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-colors">
+        <div className="flex items-center gap-3 text-blue-400">
           <TrendingUp className="w-8 h-8" />
           <span className="text-xl font-bold">AI Trading Platform</span>
-        </Link>
+        </div>
       </div>
 
       <Card className="w-full max-w-md bg-slate-800 border-slate-700">
