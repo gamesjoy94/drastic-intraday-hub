@@ -14,6 +14,8 @@ interface GoldMarketStats {
   low24h: number;
   volatility: number;
   lastUpdate: string;
+  spread: number;
+  marketStatus: 'ACTIVE' | 'SLOW' | 'CLOSED';
 }
 
 const MarketData = ({ symbol }: MarketDataProps) => {
@@ -24,31 +26,59 @@ const MarketData = ({ symbol }: MarketDataProps) => {
     high24h: 0,
     low24h: 0,
     volatility: 0,
-    lastUpdate: ''
+    lastUpdate: '',
+    spread: 0,
+    marketStatus: 'ACTIVE'
   });
 
   useEffect(() => {
-    // Simulate realistic gold market data
+    // More realistic gold market data with real-time updates
     const updateGoldData = () => {
-      const basePrice = 2650;
-      const volatility = Math.random() * 2 + 0.5; // 0.5% to 2.5%
+      const basePrice = 2655;
+      const now = new Date();
+      const marketHour = now.getUTCHours();
+      
+      // Determine market status based on trading sessions
+      let marketStatus: 'ACTIVE' | 'SLOW' | 'CLOSED' = 'ACTIVE';
+      if (marketHour >= 22 || marketHour <= 6) {
+        marketStatus = 'SLOW'; // Asian session - typically slower for gold
+      } else if (marketHour >= 13 && marketHour <= 17) {
+        marketStatus = 'ACTIVE'; // NY + London overlap - most active
+      }
+      
+      const volatility = marketStatus === 'ACTIVE' ? 
+        Math.random() * 1.5 + 1.0 : // 1.0% to 2.5% during active hours
+        Math.random() * 0.8 + 0.3;   // 0.3% to 1.1% during slow hours
+      
+      // More realistic volume based on market hours
+      const baseVolume = marketStatus === 'ACTIVE' ? 180000 : 80000;
+      const volumeVariation = Math.random() * 0.4 + 0.8; // ±20% variation
       
       const mockData: GoldMarketStats = {
-        volume: (Math.random() * 150000 + 50000).toFixed(0), // Gold trading volume
-        avgVolume: (Math.random() * 120000 + 60000).toFixed(0),
-        marketCap: "13.2T", // Gold market cap is massive
-        high24h: basePrice + (Math.random() * 50 + 10),
-        low24h: basePrice - (Math.random() * 50 + 10),
+        volume: Math.floor(baseVolume * volumeVariation).toString(),
+        avgVolume: (baseVolume * 0.9).toFixed(0),
+        marketCap: "13.2T",
+        high24h: basePrice + (Math.random() * 45 + 15), // Realistic daily range
+        low24h: basePrice - (Math.random() * 45 + 15),
         volatility: volatility,
-        lastUpdate: new Date().toLocaleTimeString()
+        lastUpdate: now.toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }),
+        spread: marketStatus === 'ACTIVE' ? 
+          Math.random() * 0.8 + 0.2 : // Tighter spreads during active hours
+          Math.random() * 1.5 + 0.5,   // Wider spreads during slow hours
+        marketStatus
       };
       
       setGoldStats(mockData);
     };
 
     updateGoldData();
-    // Update every 30 seconds for live feel
-    const interval = setInterval(updateGoldData, 30000);
+    // Update every 15 seconds for more responsive market data
+    const interval = setInterval(updateGoldData, 15000);
     
     return () => clearInterval(interval);
   }, [symbol]);
@@ -62,6 +92,24 @@ const MarketData = ({ symbol }: MarketDataProps) => {
       return (num / 1000).toFixed(1) + 'K';
     }
     return num.toString();
+  };
+
+  const getMarketStatusColor = () => {
+    switch (goldStats.marketStatus) {
+      case 'ACTIVE': return 'text-green-400';
+      case 'SLOW': return 'text-yellow-400';
+      case 'CLOSED': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getMarketStatusText = () => {
+    switch (goldStats.marketStatus) {
+      case 'ACTIVE': return 'High Activity';
+      case 'SLOW': return 'Low Activity';
+      case 'CLOSED': return 'Market Closed';
+      default: return 'Unknown';
+    }
   };
 
   return (
@@ -83,6 +131,11 @@ const MarketData = ({ symbol }: MarketDataProps) => {
         <div className="flex justify-between items-center">
           <span className="text-slate-400 text-sm">Avg Volume</span>
           <span className="text-white font-medium">{formatVolume(goldStats.avgVolume)}</span>
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <span className="text-slate-400 text-sm">Bid/Ask Spread</span>
+          <span className="text-white font-medium">${goldStats.spread.toFixed(2)}</span>
         </div>
         
         <div className="flex justify-between items-center">
@@ -109,8 +162,8 @@ const MarketData = ({ symbol }: MarketDataProps) => {
         <div className="flex justify-between items-center">
           <span className="text-slate-400 text-sm">Volatility</span>
           <span className={`font-medium ${
-            goldStats.volatility > 1.5 ? 'text-red-400' : 
-            goldStats.volatility > 1 ? 'text-yellow-400' : 'text-green-400'
+            goldStats.volatility > 2.0 ? 'text-red-400' : 
+            goldStats.volatility > 1.2 ? 'text-yellow-400' : 'text-green-400'
           }`}>
             {goldStats.volatility.toFixed(2)}%
           </span>
@@ -119,8 +172,13 @@ const MarketData = ({ symbol }: MarketDataProps) => {
         <div className="mt-4 p-3 bg-slate-700 rounded-lg">
           <div className="text-xs text-slate-300 mb-1">Market Status</div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 font-medium text-sm">Live Trading Active</span>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              goldStats.marketStatus === 'ACTIVE' ? 'bg-green-400' :
+              goldStats.marketStatus === 'SLOW' ? 'bg-yellow-400' : 'bg-red-400'
+            }`}></div>
+            <span className={`font-medium text-sm ${getMarketStatusColor()}`}>
+              {getMarketStatusText()}
+            </span>
           </div>
         </div>
       </div>
