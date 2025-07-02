@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface AuthContextType {
@@ -10,7 +9,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Predefined credentials
+// Predefined credentials - ensuring user1 credentials are correct
 const VALID_CREDENTIALS = [
   { username: 'admin', password: 'letmein123' },
   { username: 'user1', password: 'pass456' }
@@ -59,6 +58,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
 
+  // Check for valid session on mount
+  useEffect(() => {
+    const currentSessionId = getCurrentSessionId();
+    const activeSessions = getActiveSessions();
+    
+    if (currentSessionId) {
+      const validSession = activeSessions.find(session => session.sessionId === currentSessionId);
+      if (validSession) {
+        setIsAuthenticated(true);
+        setCurrentUser(validSession.username);
+        console.log(`Restored session for ${validSession.username}`);
+      } else {
+        // Clean up invalid session
+        removeCurrentSession();
+      }
+    }
+  }, []);
+
   // Check for session conflicts on component mount and visibility change
   useEffect(() => {
     const checkSessionValidity = () => {
@@ -106,9 +123,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = (username: string, password: string): boolean => {
+    // Trim whitespace to prevent login issues
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+    
+    console.log(`Login attempt for username: "${trimmedUsername}"`);
+    
     const isValid = VALID_CREDENTIALS.some(
-      cred => cred.username === username && cred.password === password
+      cred => cred.username === trimmedUsername && cred.password === trimmedPassword
     );
+
+    console.log(`Credentials valid: ${isValid}`);
 
     if (isValid) {
       const newSessionId = generateSessionId();
@@ -116,12 +141,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Remove any existing sessions for this user
       const filteredSessions = activeSessions.filter(
-        session => session.username !== username
+        session => session.username !== trimmedUsername
       );
       
       // Add new session
       const newSession: ActiveSession = {
-        username,
+        username: trimmedUsername,
         sessionId: newSessionId,
         timestamp: Date.now()
       };
@@ -131,11 +156,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentSessionId(newSessionId);
       
       setIsAuthenticated(true);
-      setCurrentUser(username);
+      setCurrentUser(trimmedUsername);
       
-      console.log(`New session created for ${username}. Previous sessions terminated.`);
+      console.log(`New session created for ${trimmedUsername}. Previous sessions terminated.`);
       return true;
     }
+    
+    console.log('Invalid credentials provided');
     return false;
   };
 
