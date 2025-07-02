@@ -12,7 +12,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Predefined credentials - ensuring user1 credentials are correct
 const VALID_CREDENTIALS = [
   { username: 'admin', password: 'letmein123' },
-  { username: 'user1', password: 'pass456' }
+  { username: 'user1', password: 'pass456' },
+  { username: 'user2', password: 'mypass789' }
 ];
 
 // Session management
