@@ -22,8 +22,10 @@ const RightPanel = ({
   return (
     <div className="w-96 bg-slate-800 border-l border-slate-700 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* MT5 Trading Panel */}
-        <MT5TradingPanel />
+        {/* MT5 Trading Panel - Always visible at the top */}
+        <div className="mb-4">
+          <MT5TradingPanel />
+        </div>
         
         {/* Analysis Panel */}
         <AnalysisPanel 
