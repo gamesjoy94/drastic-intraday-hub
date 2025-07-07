@@ -1,4 +1,3 @@
-
 import { mt5ApiService, TradeOrder } from './mt5ApiService';
 
 interface RiskSettings {
@@ -21,6 +20,13 @@ interface AIAnalysis {
   currentPrice: number;
 }
 
+interface SignalRecord {
+  timestamp: Date;
+  signal: AIAnalysis;
+  executed: boolean;
+  result?: any;
+}
+
 class TradeSignalProcessor {
   private riskSettings: RiskSettings = {
     maxRiskPercentage: 2, // 2% risk per trade
@@ -31,12 +37,7 @@ class TradeSignalProcessor {
   };
 
   private isAutoTradingEnabled = false;
-  private tradingHistory: Array<{
-    timestamp: Date;
-    signal: AIAnalysis;
-    executed: boolean;
-    result?: any;
-  }> = [];
+  private tradingHistory: SignalRecord[] = [];
 
   setRiskSettings(settings: Partial<RiskSettings>) {
     this.riskSettings = { ...this.riskSettings, ...settings };
@@ -74,7 +75,7 @@ class TradeSignalProcessor {
 
     try {
       // Record the signal
-      const signalRecord = {
+      const signalRecord: SignalRecord = {
         timestamp: new Date(),
         signal: analysis,
         executed: false
@@ -174,7 +175,7 @@ class TradeSignalProcessor {
     return Math.min(positionSize, this.riskSettings.maxPositionSize);
   }
 
-  getTradingHistory(): Array<any> {
+  getTradingHistory(): SignalRecord[] {
     return [...this.tradingHistory];
   }
 
