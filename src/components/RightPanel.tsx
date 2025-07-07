@@ -1,8 +1,8 @@
 
-import MarketData from './MarketData';
+import React from 'react';
 import AnalysisPanel from './AnalysisPanel';
 import TradePlan from './TradePlan';
-import LivePatternRecognition from './LivePatternRecognition';
+import MT5TradingPanel from './MT5TradingPanel';
 
 interface RightPanelProps {
   selectedSymbol: string;
@@ -12,18 +12,32 @@ interface RightPanelProps {
   currentPrice: number;
 }
 
-const RightPanel = ({ selectedSymbol, selectedTimeframe, analysisData, tradePlan, currentPrice }: RightPanelProps) => {
+const RightPanel = ({ 
+  selectedSymbol, 
+  selectedTimeframe, 
+  analysisData, 
+  tradePlan, 
+  currentPrice 
+}: RightPanelProps) => {
   return (
-    <div className="w-80 lg:w-96 flex flex-col border-l border-slate-700 bg-slate-900">
-      <div className="flex-1 overflow-y-auto">
-        <MarketData symbol={selectedSymbol} />
+    <div className="w-96 bg-slate-800 border-l border-slate-700 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* MT5 Trading Panel */}
+        <MT5TradingPanel />
+        
+        {/* Analysis Panel */}
         <AnalysisPanel 
-          symbol={selectedSymbol} 
-          timeframe={selectedTimeframe}
           analysisData={analysisData}
+          selectedSymbol={selectedSymbol}
+          selectedTimeframe={selectedTimeframe}
         />
-        <LivePatternRecognition currentPrice={currentPrice} />
-        <TradePlan tradePlan={tradePlan} selectedTimeframe={selectedTimeframe} />
+        
+        {/* Trade Plan */}
+        <TradePlan 
+          tradePlan={tradePlan}
+          currentPrice={currentPrice}
+          selectedSymbol={selectedSymbol}
+        />
       </div>
     </div>
   );
