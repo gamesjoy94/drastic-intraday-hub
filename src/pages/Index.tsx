@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, BarChart3, ArrowRight, LogIn, LogOut, User } from 'lucide-react';
+import { TrendingUp, BarChart3, ArrowRight, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import TradingDashboard from '../components/TradingDashboard';
+import MT5TradingPanel from '../components/MT5TradingPanel';
 
 const Index = () => {
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showMT5Panel, setShowMT5Panel] = useState(false);
   const { isAuthenticated, currentUser, logout } = useAuth();
 
   if (showDashboard) {
@@ -31,6 +33,14 @@ const Index = () => {
                   <User className="w-4 h-4" />
                   <span className="text-sm">Welcome, {currentUser}</span>
                 </div>
+                <Button 
+                  variant="outline" 
+                  className="border-slate-600 text-white hover:bg-slate-700"
+                  onClick={() => setShowMT5Panel(!showMT5Panel)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  {showMT5Panel ? 'Hide' : 'Show'} MT5 Panel
+                </Button>
                 <Button 
                   variant="outline" 
                   className="border-slate-600 text-white hover:bg-slate-700"
@@ -58,8 +68,17 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-6 py-16">
+        {/* MT5 Trading Panel Section - Show when toggled */}
+        {showMT5Panel && (
+          <div className="mb-8">
+            <div className="max-w-md mx-auto">
+              <MT5TradingPanel />
+            </div>
+          </div>
+        )}
+
+        {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-600 bg-clip-text text-transparent">
             AI-Powered Trading
