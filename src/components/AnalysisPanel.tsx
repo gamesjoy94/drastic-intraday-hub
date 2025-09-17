@@ -119,7 +119,7 @@ const AnalysisPanel = ({ symbol, timeframe, analysisData }: AnalysisPanelProps) 
               {rsiStatus.text}
             </span>
           </div>
-          <div className="text-white font-semibold">{indicators.rsi}</div>
+          <div className="text-foreground font-semibold">{indicators.rsi}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
@@ -129,7 +129,7 @@ const AnalysisPanel = ({ symbol, timeframe, analysisData }: AnalysisPanelProps) 
               {macdStatus.text}
             </span>
           </div>
-          <div className="text-white font-semibold">{indicators.macd}</div>
+          <div className="text-foreground font-semibold">{indicators.macd}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
@@ -139,22 +139,22 @@ const AnalysisPanel = ({ symbol, timeframe, analysisData }: AnalysisPanelProps) 
               {histogramStatus.text}
             </span>
           </div>
-          <div className="text-white font-semibold">{indicators.macdHistogram}</div>
+          <div className="text-foreground font-semibold">{indicators.macdHistogram}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="text-slate-300 text-sm mb-1">VWAP</div>
-          <div className="text-white font-semibold">${indicators.vwap}</div>
+          <div className="text-foreground font-semibold">${indicators.vwap}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="text-slate-300 text-sm mb-1">Volume</div>
-          <div className="text-white font-semibold">{formatVolume(indicators.volume)}</div>
+          <div className="text-foreground font-semibold">{formatVolume(indicators.volume)}</div>
         </div>
 
         <div className="bg-slate-700 rounded-lg p-3">
           <div className="text-slate-300 text-sm mb-1">ATR (14)</div>
-          <div className="text-white font-semibold">{indicators.atr}</div>
+          <div className="text-foreground font-semibold">{indicators.atr}</div>
         </div>
 
         {/* Strategy Status */}

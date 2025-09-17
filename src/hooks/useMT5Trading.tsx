@@ -1,8 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { mt5ApiService, MT5Account, MT5Position, MT5AccountInfo } from '../services/mt5ApiService';
 import { tradeSignalProcessor, RiskSettings } from '../services/tradeSignalProcessor';
 import { useToast } from './use-toast';
+import APIErrorHandler from '@/utils/apiErrorHandler';
+import DataValidator from '@/utils/dataValidation';
 
 export const useMT5Trading = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -130,13 +132,38 @@ export const useMT5Trading = () => {
     });
   };
 
-  const processAISignal = async (analysis: any) => {
-    const result = await tradeSignalProcessor.processAISignal(analysis);
-    setTradingHistory(tradeSignalProcessor.getTradingHistory());
-    return result;
-  };
+  const processAISignal = useCallback(async (analysis: any) => {
+    try {
+      // Validate the analysis data before processing
+      const validatedTradingData = DataValidator.validateTradingData(analysis.tradePlan);
+      
+      if (!validatedTradingData) {
+        console.warn('Invalid trading data received, skipping signal processing');
+        return false;
+      }
 
-  const closePosition = async (ticket: string) => {
+      const result = await tradeSignalProcessor.processAISignal({
+        ...analysis,
+        tradePlan: validatedTradingData
+      });
+      
+      setTradingHistory(tradeSignalProcessor.getTradingHistory());
+      return result;
+    } catch (error) {
+      const apiError = APIErrorHandler.handleMT5Error(error);
+      console.error('Error processing AI signal:', apiError);
+      
+      toast({
+        title: "Trade Signal Error",
+        description: apiError.message,
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  }, [toast]);
+
+  const closePosition = useCallback(async (ticket: string) => {
     try {
       const result = await mt5ApiService.closeTrade(ticket);
       
@@ -150,21 +177,26 @@ export const useMT5Trading = () => {
           description: `Successfully closed position ${ticket}`,
         });
       } else {
+        const error = new Error(result.error || 'Failed to close position');
+        const apiError = APIErrorHandler.handleMT5Error(error);
+        
         toast({
           title: "Close Failed",
-          description: result.error || "Failed to close position",
+          description: apiError.message,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error closing position:', error);
+      const apiError = APIErrorHandler.handleMT5Error(error);
+      console.error('Error closing position:', apiError);
+      
       toast({
         title: "Close Error",
-        description: "An error occurred while closing the position",
+        description: apiError.message,
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   return {
     isConnected,

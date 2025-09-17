@@ -63,16 +63,13 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Trading dashboard specific colors
+				// Trading dashboard specific colors using semantic tokens
 				trading: {
-					dark: '#0f172a',
-					darker: '#020617',
-					card: '#1e293b',
-					border: '#334155',
-					success: '#10b981',
-					danger: '#ef4444',
-					warning: '#f59e0b',
-					info: '#3b82f6'
+					success: 'hsl(var(--trading-success))',
+					danger: 'hsl(var(--trading-danger))',
+					warning: 'hsl(var(--trading-warning))',
+					info: 'hsl(var(--trading-info))',
+					neutral: 'hsl(var(--trading-neutral))'
 				}
 			},
 			borderRadius: {

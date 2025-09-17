@@ -33,12 +33,12 @@ const LivePriceBanner = ({ livePriceData }: LivePriceBannerProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 lg:gap-3">
           <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
-          <span className="text-white font-semibold text-sm lg:text-base">Live XAUUSD Feed</span>
-          <span className="text-xs text-white/80 hidden md:inline">
+          <span className="text-foreground font-semibold text-sm lg:text-base">Live XAUUSD Feed</span>
+          <span className="text-xs text-muted-foreground hidden md:inline">
             {getCurrentSession()}
           </span>
         </div>
-        <div className="flex items-center gap-2 lg:gap-4 text-white">
+        <div className="flex items-center gap-2 lg:gap-4 text-foreground">
           <span className="text-base lg:text-lg font-bold">
             ${livePriceData.price.toFixed(2)}
           </span>

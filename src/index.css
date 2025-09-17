@@ -14,8 +14,8 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -25,6 +25,13 @@
 
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
+
+    /* Trading specific tokens */
+    --trading-success: 142.1 76.2% 36.3%;
+    --trading-danger: 0 84.2% 60.2%;
+    --trading-warning: 47.9 95.8% 53.1%;
+    --trading-info: 217.2 91.2% 59.8%;
+    --trading-neutral: 60 4.8% 95.9%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -56,33 +63,33 @@
   }
 }
 
-/* Custom trading styles */
+/* Custom trading styles using semantic tokens */
 .trading-card {
-  @apply bg-slate-800 border border-slate-700 rounded-lg p-4 shadow-lg;
+  @apply bg-card border border-border rounded-lg p-4 shadow-lg;
 }
 
 .trading-button {
-  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-200;
+  @apply bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md transition-colors duration-200;
 }
 
 .price-up {
-  @apply text-green-400;
+  @apply text-trading-success;
 }
 
 .price-down {
-  @apply text-red-400;
+  @apply text-trading-danger;
 }
 
 .indicator-positive {
-  @apply text-green-400 bg-green-400/10 px-2 py-1 rounded;
+  @apply text-trading-success bg-trading-success/10 px-2 py-1 rounded;
 }
 
 .indicator-negative {
-  @apply text-red-400 bg-red-400/10 px-2 py-1 rounded;
+  @apply text-trading-danger bg-trading-danger/10 px-2 py-1 rounded;
 }
 
 .indicator-neutral {
-  @apply text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded;
+  @apply text-trading-warning bg-trading-warning/10 px-2 py-1 rounded;
 }
 
 /* TradingView widget container */

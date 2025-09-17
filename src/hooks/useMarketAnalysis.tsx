@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import APIErrorHandler from '@/utils/apiErrorHandler';
+import DataValidator from '@/utils/dataValidation';
 
 export const useMarketAnalysis = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
@@ -37,14 +39,15 @@ export const useMarketAnalysis = () => {
     
     try {
       // Always use XAU/USD format for the API
-      const apiSymbol = 'XAU/USD';
+      const apiSymbol = DataValidator.validateSymbol(selectedSymbol);
+      const validTimeframe = DataValidator.validateTimeframe(selectedTimeframe);
       
-      console.log(`useMarketAnalysis: Sending analysis request with timeframe: ${selectedTimeframe}`);
+      console.log(`useMarketAnalysis: Sending analysis request with timeframe: ${validTimeframe}`);
       
       const { data, error } = await supabase.functions.invoke('analyze-market', {
         body: { 
           symbol: apiSymbol, 
-          timeframe: selectedTimeframe 
+          timeframe: validTimeframe 
         }
       });
 
@@ -60,31 +63,43 @@ export const useMarketAnalysis = () => {
         throw new Error(data.error);
       }
 
-      // Update state with real analysis data
-      setCurrentPrice(data.currentPrice);
-      setPriceChange(data.priceChange);
-      setTradePlan(data.tradePlan);
-      setAnalysisData(data);
-      setConnectionError(false);
+      // Validate and update state with real analysis data
+      const validatedData = DataValidator.validateMarketData(data);
+      
+      if (validatedData) {
+        setCurrentPrice(validatedData.currentPrice);
+        setPriceChange(validatedData.priceChange);
+        setTradePlan(validatedData.tradePlan);
+        setAnalysisData(validatedData.analysisData || data);
+        setConnectionError(false);
 
-      console.log(`useMarketAnalysis: Analysis completed for ${selectedTimeframe} timeframe`);
+        console.log(`useMarketAnalysis: Analysis completed for ${validTimeframe} timeframe`);
 
-      toast({
-        title: "Analysis Complete",
-        description: `Gold trading analysis completed for ${selectedTimeframe} timeframe.`,
-      });
+        toast({
+          title: "Analysis Complete",
+          description: `Gold trading analysis completed for ${validTimeframe} timeframe.`,
+        });
+      } else {
+        throw new Error('Invalid data received from market analysis API');
+      }
 
     } catch (error) {
       console.error('useMarketAnalysis: Gold Trading analysis failed:', error);
       setConnectionError(true);
       
-      const errorMessage = error.message || 'Unknown error';
+      const apiError = APIErrorHandler.handleMarketDataError(error);
       
-      // Show appropriate error message
-      if (errorMessage.includes('rate limit') || errorMessage.includes('API credits')) {
+      // Show appropriate error message based on error type
+      if (apiError.code === 'RATE_LIMIT') {
         toast({
           title: "API Limit Reached",
-          description: "The market data API has reached its limit. Please try again later.",
+          description: apiError.message,
+          variant: "destructive",
+        });
+      } else if (apiError.code === 'NETWORK_ERROR') {
+        toast({
+          title: "Connection Error",
+          description: apiError.message,
           variant: "destructive",
         });
       } else {

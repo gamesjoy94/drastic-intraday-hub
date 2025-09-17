@@ -9,7 +9,12 @@ export const useMarketAnalysisWithTrading = () => {
 
   // Auto-process AI signals when new analysis is available
   useEffect(() => {
-    if (marketAnalysis.analysisData && marketAnalysis.tradePlan && mt5Trading.isAutoTradingEnabled) {
+    if (marketAnalysis.analysisData && 
+        marketAnalysis.tradePlan && 
+        mt5Trading.isAutoTradingEnabled && 
+        mt5Trading.isConnected &&
+        !marketAnalysis.isAnalyzing) {
+      
       const processSignal = async () => {
         try {
           const aiAnalysis = {
@@ -27,10 +32,18 @@ export const useMarketAnalysisWithTrading = () => {
         }
       };
 
-      // Small delay to ensure analysis is complete
-      setTimeout(processSignal, 1000);
+      // Small delay to ensure analysis is complete and prevent race conditions
+      const timeoutId = setTimeout(processSignal, 1500);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [marketAnalysis.analysisData, marketAnalysis.tradePlan, mt5Trading.isAutoTradingEnabled]);
+  }, [
+    marketAnalysis.analysisData, 
+    marketAnalysis.tradePlan, 
+    marketAnalysis.isAnalyzing,
+    mt5Trading.isAutoTradingEnabled, 
+    mt5Trading.isConnected
+  ]);
 
   return {
     ...marketAnalysis,
