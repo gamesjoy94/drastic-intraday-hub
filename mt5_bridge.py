@@ -1,10 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional, List
 import MetaTrader5 as mt5
 import time
+import os
 
 app = FastAPI()
+
+# Shared-secret for simple auth
+BRIDGE_KEY = os.getenv("MT5_BRIDGE_KEY")
+
+def require_key(provided: Optional[str]):
+    if BRIDGE_KEY:
+        if not provided or provided != BRIDGE_KEY:
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
 class ConnectPayload(BaseModel):
     login: int
@@ -21,6 +30,9 @@ class TradePayload(BaseModel):
     comment: Optional[str] = None
     magic: Optional[int] = None
 
+class ClosePayload(BaseModel):
+    ticket: int
+
 # internal state
 connected_account = None
 
@@ -29,7 +41,8 @@ def ensure_initialized():
         raise RuntimeError(f"mt5.initialize() failed, error={mt5.last_error()}")
 
 @app.post("/connect")
-def connect(payload: ConnectPayload):
+def connect(payload: ConnectPayload, x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     global connected_account
     try:
         ensure_initialized()
@@ -46,7 +59,8 @@ def connect(payload: ConnectPayload):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/disconnect")
-def disconnect():
+def disconnect(x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     global connected_account
     try:
         mt5.shutdown()
@@ -56,7 +70,8 @@ def disconnect():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/account")
-def account_info():
+def account_info(x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     try:
         ensure_initialized()
         info = mt5.account_info()
@@ -74,7 +89,8 @@ def account_info():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/positions")
-def get_positions():
+def get_positions(x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     try:
         ensure_initialized()
         positions = mt5.positions_get()
@@ -88,7 +104,7 @@ def get_positions():
                 "type": "BUY" if p.type == mt5.ORDER_TYPE_BUY else "SELL",
                 "volume": p.volume,
                 "open_price": p.price_open,
-                "current_price": p.price_current if hasattr(p, 'price_current') else p.price_open,
+                "current_price": getattr(p, 'price_current', p.price_open),
                 "profit": p.profit,
                 "stop_loss": p.sl,
                 "take_profit": p.tp,
@@ -99,7 +115,8 @@ def get_positions():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/trade")
-def place_trade(order: TradePayload):
+def place_trade(order: TradePayload, x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     try:
         ensure_initialized()
         symbol_info = mt5.symbol_info(order.symbol)
@@ -136,18 +153,19 @@ def place_trade(order: TradePayload):
         if result is None:
             raise HTTPException(status_code=500, detail=f"order_send returned None: {mt5.last_error()}")
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            raise HTTPException(status_code=500, detail=f"Order failed, retcode={result.retcode}, comment={result.comment}")
-        return {"success": True, "order": {"order": result.order, "transaction": result}}
+            raise HTTPException(status_code=500, detail=f"Order failed, retcode={result.retcode}, comment={getattr(result, 'comment', '')}")
+        return {"success": True, "order": int(result.order), "retcode": int(result.retcode), "comment": getattr(result, 'comment', '')}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/close")
-def close_position(ticket: int):
+def close_position(payload: ClosePayload, x_mt5_bridge_key: Optional[str] = Header(None)):
+    require_key(x_mt5_bridge_key)
     try:
         ensure_initialized()
-        positions = mt5.positions_get(ticket=ticket)
+        positions = mt5.positions_get(ticket=payload.ticket)
         if not positions:
             raise HTTPException(status_code=404, detail="Position not found")
         p = positions[0]
@@ -173,7 +191,7 @@ def close_position(ticket: int):
         result = mt5.order_send(request)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             raise HTTPException(status_code=500, detail=f"Close failed: {result}")
-        return {"success": True, "order": result.order}
+        return {"success": True, "order": int(result.order), "retcode": int(result.retcode)}
     except HTTPException:
         raise
     except Exception as e:
