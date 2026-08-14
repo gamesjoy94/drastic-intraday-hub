@@ -27,7 +27,7 @@ export const useMT5Trading = () => {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isConnected) {
       // Update positions and account info every 30 seconds
