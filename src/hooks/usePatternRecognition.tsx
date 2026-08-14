@@ -47,7 +47,7 @@ export const usePatternRecognition = () => {
   const [patternData, setPatternData] = useState<PatternData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const priceHistoryRef = useRef<number[]>([]);
   const { toast } = useToast();
 
