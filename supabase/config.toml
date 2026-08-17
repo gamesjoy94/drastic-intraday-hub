@@ -3,3 +3,18 @@ project_id = "yppffgwsepvcrqdvegwp"
 
 [functions.analyze-market]
 verify_jwt = false
+
+[functions.mt5-connect]
+verify_jwt = false
+
+[functions.mt5-account]
+verify_jwt = false
+
+[functions.mt5-positions]
+verify_jwt = false
+
+[functions.mt5-execute]
+verify_jwt = false
+
+[functions.mt5-close]
+verify_jwt = false
