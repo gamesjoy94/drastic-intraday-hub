@@ -1,30 +1,36 @@
+import { supabase } from '@/integrations/supabase/client';
 
-interface MT5Account {
+export interface MT5AccountInput {
+  label: string;
   login: string;
-  password: string;
   serverName: string;
   isDemo: boolean;
+  symbolSuffix: string;
 }
 
-interface TradeOrder {
-  symbol: string;
-  action: 'BUY' | 'SELL';
-  volume: number;
-  price?: number;
-  stopLoss?: number;
-  takeProfit?: number;
-  comment?: string;
-  magic?: number;
+export interface MT5AccountRecord {
+  id: string;
+  label: string;
+  login: string;
+  server_name: string;
+  is_demo: boolean;
+  symbol_suffix: string;
 }
 
-interface TradeResult {
-  success: boolean;
-  orderId?: string;
-  error?: string;
-  executionPrice?: number;
+export interface MT5AccountInfo {
+  login: string;
+  balance: number;
+  equity: number;
+  margin: number;
+  freeMargin: number;
+  marginLevel: number;
+  currency: string;
+  isDemo: boolean;
+  server: string;
+  leverage?: number;
 }
 
-interface MT5Position {
+export interface MT5Position {
   ticket: string;
   symbol: string;
   type: 'BUY' | 'SELL';
@@ -37,299 +43,253 @@ interface MT5Position {
   openTime: string;
 }
 
-interface MT5AccountInfo {
-  balance: number;
-  equity: number;
-  margin: number;
-  freeMargin: number;
-  marginLevel: number;
-  currency: string;
+export interface RiskSettings {
+  max_risk_percentage: number;
+  max_position_size: number;
+  max_open_positions: number;
+  min_confidence: number;
+  max_slippage_percentage: number;
+  use_stop_loss: boolean;
+  use_take_profit: boolean;
+  allowed_symbols: string[];
+  auto_trading_enabled: boolean;
+  require_manual_confirm: boolean;
+  kill_switch_engaged: boolean;
 }
 
+export interface OrderPlan {
+  accountId: string;
+  accountLabel: string;
+  isDemo: boolean;
+  symbol: string;
+  brokerSymbol: string;
+  side: 'BUY' | 'SELL';
+  volume: number;
+  marketPrice: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  estimatedRisk: number;
+  currency: string;
+  digits: number;
+  requiresConfirmation: boolean;
+}
+
+export interface SignalRecord {
+  id: string;
+  created_at: string;
+  symbol: string;
+  direction: string;
+  entry: number | null;
+  stop_loss: number | null;
+  take_profit: number | null;
+  confidence: number | null;
+  executed: boolean;
+  reason: string | null;
+}
+
+export interface TradeSignal {
+  symbol: string;
+  direction: string;
+  entry: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  confidence: number;
+  currentPrice?: number;
+}
+
+class BridgeCallError extends Error {
+  status: number;
+  constructor(message: string, status = 500) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function invoke<T>(fn: string, body: Record<string, unknown> = {}): Promise<T> {
+  const { data, error } = await supabase.functions.invoke(fn, { body });
+
+  if (error) {
+    // Edge functions return a JSON body with a readable `error` even on 4xx/5xx.
+    let message = error.message;
+    let status = 500;
+    const ctx = (error as unknown as { context?: Response }).context;
+    if (ctx && typeof ctx.text === 'function') {
+      status = ctx.status ?? 500;
+      try {
+        const parsed = JSON.parse(await ctx.text());
+        if (parsed?.error) message = parsed.error;
+      } catch {
+        /* keep the original message */
+      }
+    }
+    throw new BridgeCallError(message, status);
+  }
+
+  if ((data as { error?: string })?.error) {
+    throw new BridgeCallError((data as { error: string }).error, 400);
+  }
+
+  return data as T;
+}
+
+/**
+ * Talks to the self-hosted MT5 bridge through Supabase edge functions.
+ * No credentials, order routing or risk logic live in the browser.
+ */
 class MT5ApiService {
-  private account: MT5Account | null = null;
-  private isConnected = false;
-  private mockPositions: MT5Position[] = [];
-  private mockBalance = 10000;
-  private connectionAttempts = 0;
-  private maxConnectionAttempts = 3;
-
-  constructor() {
-    this.loadStoredAccount();
-    this.initializeMockData();
+  async connect(input: MT5AccountInput) {
+    return invoke<{ account: MT5AccountRecord; accountInfo: MT5AccountInfo }>(
+      'mt5-connect',
+      input as unknown as Record<string, unknown>,
+    );
   }
 
-  private loadStoredAccount() {
-    const stored = localStorage.getItem('mt5_account');
-    if (stored) {
-      try {
-        this.account = JSON.parse(stored);
-      } catch (error) {
-        console.error('Failed to load stored MT5 account:', error);
-      }
-    }
+  async disconnect(accountId: string) {
+    const { error } = await supabase
+      .from('mt5_accounts')
+      .update({ is_active: false })
+      .eq('id', accountId);
+    if (error) throw new Error(error.message);
   }
 
-  private saveAccount() {
-    if (this.account) {
-      localStorage.setItem('mt5_account', JSON.stringify({
-        ...this.account,
-        password: '***' // Don't store password in localStorage for security
-      }));
-    }
+  async getActiveAccount(): Promise<MT5AccountRecord | null> {
+    const { data, error } = await supabase
+      .from('mt5_accounts')
+      .select('id, label, login, server_name, is_demo, symbol_suffix')
+      .eq('is_active', true)
+      .order('last_connected_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
   }
 
-  private initializeMockData() {
-    // Initialize some mock positions for demo
-    const mockPositionsData = localStorage.getItem('mt5_mock_positions');
-    if (mockPositionsData) {
-      try {
-        this.mockPositions = JSON.parse(mockPositionsData);
-      } catch (error) {
-        this.mockPositions = [];
-      }
-    }
-
-    const mockBalanceData = localStorage.getItem('mt5_mock_balance');
-    if (mockBalanceData) {
-      try {
-        this.mockBalance = parseFloat(mockBalanceData);
-      } catch (error) {
-        this.mockBalance = 10000;
-      }
-    }
+  async getAccountInfo(accountId?: string) {
+    const res = await invoke<{ account: MT5AccountRecord; accountInfo: MT5AccountInfo }>(
+      'mt5-account',
+      accountId ? { accountId } : {},
+    );
+    return res.accountInfo;
   }
 
-  private saveMockData() {
-    localStorage.setItem('mt5_mock_positions', JSON.stringify(this.mockPositions));
-    localStorage.setItem('mt5_mock_balance', this.mockBalance.toString());
+  async getPositions(accountId?: string): Promise<MT5Position[]> {
+    const res = await invoke<{ positions: MT5Position[] }>(
+      'mt5-positions',
+      accountId ? { accountId } : {},
+    );
+    return res.positions ?? [];
   }
 
-  async connect(account: MT5Account): Promise<boolean> {
-    this.connectionAttempts++;
-    
-    try {
-      console.log(`Attempting to connect to MT5 (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})`);
-      
-      // Validate account credentials
-      if (!account.login || !account.password || !account.serverName) {
-        throw new Error('Please fill in all connection fields');
-      }
-
-      // Simulate connection delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // For demo purposes, simulate successful connection after validation
-      if (this.connectionAttempts <= this.maxConnectionAttempts) {
-        this.account = account;
-        this.isConnected = true;
-        this.connectionAttempts = 0;
-        this.saveAccount();
-        
-        console.log(`Successfully connected to MT5 ${account.isDemo ? 'demo' : 'live'} account`);
-        return true;
-      } else {
-        throw new Error('Maximum connection attempts reached');
-      }
-    } catch (error) {
-      console.error('MT5 connection error:', error);
-      
-      if (this.connectionAttempts >= this.maxConnectionAttempts) {
-        this.connectionAttempts = 0;
-        throw new Error(`Failed to connect after ${this.maxConnectionAttempts} attempts: ${error.message}`);
-      }
-      
-      return false;
-    }
+  async closePosition(ticket: string, accountId?: string) {
+    return invoke<{ closed: string[]; failed: { ticket: string; error: string }[] }>(
+      'mt5-close',
+      { ticket, ...(accountId ? { accountId } : {}) },
+    );
   }
 
-  async disconnect(): Promise<void> {
-    this.isConnected = false;
-    this.account = null;
-    this.connectionAttempts = 0;
-    localStorage.removeItem('mt5_account');
-    console.log('Disconnected from MT5');
+  async closeAllPositions(accountId?: string) {
+    return invoke<{ closed: string[]; failed: { ticket: string; error: string }[] }>(
+      'mt5-close',
+      { closeAll: true, ...(accountId ? { accountId } : {}) },
+    );
   }
 
-  async getAccountInfo(): Promise<MT5AccountInfo> {
-    if (!this.isConnected) {
-      throw new Error('Not connected to MT5');
-    }
-
-    // Calculate equity based on positions
-    const totalProfit = this.mockPositions.reduce((sum, pos) => sum + pos.profit, 0);
-    const equity = this.mockBalance + totalProfit;
-    const margin = this.mockPositions.length * 1000; // Simplified margin calculation
-    const freeMargin = equity - margin;
-    const marginLevel = margin > 0 ? (equity / margin) * 100 : 0;
-
-    return {
-      balance: this.mockBalance,
-      equity: equity,
-      margin: margin,
-      freeMargin: freeMargin,
-      marginLevel: marginLevel,
-      currency: 'USD'
-    };
-  }
-
-  async getPositions(): Promise<MT5Position[]> {
-    if (!this.isConnected) {
-      throw new Error('Not connected to MT5');
-    }
-
-    // Update current prices and profits for mock positions
-    this.mockPositions = this.mockPositions.map(position => {
-      // Simulate price movement
-      const priceChange = (Math.random() - 0.5) * 2; // -1 to +1
-      const newPrice = position.openPrice + priceChange;
-      
-      // Calculate profit
-      const pipValue = 1; // Simplified pip value
-      let profit;
-      if (position.type === 'BUY') {
-        profit = (newPrice - position.openPrice) * position.volume * pipValue * 100;
-      } else {
-        profit = (position.openPrice - newPrice) * position.volume * pipValue * 100;
-      }
-
-      return {
-        ...position,
-        currentPrice: newPrice,
-        profit: profit
-      };
+  /** Server-side dry run: validates the signal and returns the exact order it would send. */
+  async previewOrder(signal: TradeSignal) {
+    const res = await invoke<{ preview: true; plan: OrderPlan }>('mt5-execute', {
+      ...signal,
+      dedupeKey: buildDedupeKey(signal),
+      preview: true,
     });
-
-    this.saveMockData();
-    return [...this.mockPositions];
+    return res.plan;
   }
 
-  async executeTrade(order: TradeOrder): Promise<TradeResult> {
-    if (!this.isConnected) {
-      throw new Error('Not connected to MT5');
-    }
-
-    try {
-      console.log('Executing trade:', order);
-      
-      // Simulate execution delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Validate order
-      if (!order.symbol || !order.action || !order.volume) {
-        throw new Error('Invalid order parameters');
-      }
-
-      if (order.volume > 10) {
-        throw new Error('Order volume too large (max 10 lots)');
-      }
-
-      // Check available margin
-      const accountInfo = await this.getAccountInfo();
-      const requiredMargin = order.volume * 1000; // Simplified margin requirement
-      
-      if (requiredMargin > accountInfo.freeMargin) {
-        throw new Error('Insufficient margin for trade');
-      }
-
-      // Create new position
-      const executionPrice = order.price || (1800 + Math.random() * 200); // Mock price for XAUUSD
-      const newPosition: MT5Position = {
-        ticket: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        symbol: order.symbol,
-        type: order.action,
-        volume: order.volume,
-        openPrice: executionPrice,
-        currentPrice: executionPrice,
-        profit: 0,
-        stopLoss: order.stopLoss,
-        takeProfit: order.takeProfit,
-        openTime: new Date().toISOString()
-      };
-
-      this.mockPositions.push(newPosition);
-      this.saveMockData();
-
-      console.log('Trade executed successfully:', newPosition);
-      return {
-        success: true,
-        orderId: newPosition.ticket,
-        executionPrice: executionPrice
-      };
-
-    } catch (error) {
-      console.error('Trade execution error:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+  async executeOrder(signal: TradeSignal, confirmed: boolean) {
+    return invoke<{ executed: boolean; plan: OrderPlan; order: { ticket: string; fillPrice: number } }>(
+      'mt5-execute',
+      { ...signal, dedupeKey: buildDedupeKey(signal), confirmed },
+    );
   }
 
-  async closeTrade(ticket: string): Promise<TradeResult> {
-    if (!this.isConnected) {
-      throw new Error('Not connected to MT5');
-    }
+  // ---- risk settings -------------------------------------------------------
 
-    try {
-      const positionIndex = this.mockPositions.findIndex(pos => pos.ticket === ticket);
-      
-      if (positionIndex === -1) {
-        throw new Error('Position not found');
-      }
-
-      const position = this.mockPositions[positionIndex];
-      
-      // Update balance with profit/loss
-      this.mockBalance += position.profit;
-      
-      // Remove position
-      this.mockPositions.splice(positionIndex, 1);
-      this.saveMockData();
-
-      console.log(`Position ${ticket} closed with profit: ${position.profit}`);
-      
-      return {
-        success: true,
-        orderId: ticket
-      };
-    } catch (error) {
-      console.error('Error closing trade:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+  async getRiskSettings(): Promise<RiskSettings | null> {
+    const { data, error } = await supabase
+      .from('mt5_risk_settings')
+      .select('*')
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) return null;
+    const { user_id: _u, created_at: _c, updated_at: _up, ...rest } = data;
+    return rest as RiskSettings;
   }
 
-  async getMarketPrice(symbol: string): Promise<number> {
-    // Simulate market price for different symbols
-    const prices = {
-      'XAUUSD': 1950 + Math.random() * 100,
-      'EURUSD': 1.08 + Math.random() * 0.02,
-      'GBPUSD': 1.25 + Math.random() * 0.03,
-      'USDJPY': 148 + Math.random() * 2
-    };
-    
-    return prices[symbol] || 1.0;
+  async ensureRiskSettings(userId: string): Promise<RiskSettings> {
+    const existing = await this.getRiskSettings();
+    if (existing) return existing;
+    const { data, error } = await supabase
+      .from('mt5_risk_settings')
+      .insert({ user_id: userId })
+      .select('*')
+      .single();
+    if (error) throw new Error(error.message);
+    const { user_id: _u, created_at: _c, updated_at: _up, ...rest } = data;
+    return rest as RiskSettings;
   }
 
-  isAccountConnected(): boolean {
-    return this.isConnected;
+  async updateRiskSettings(patch: Partial<RiskSettings>): Promise<RiskSettings> {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) throw new Error('Not signed in');
+
+    const { data, error } = await supabase
+      .from('mt5_risk_settings')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+    if (error) throw new Error(error.message);
+    const { user_id: _u, created_at: _c, updated_at: _up, ...rest } = data;
+    return rest as RiskSettings;
   }
 
-  getConnectedAccount(): MT5Account | null {
-    return this.account;
+  // ---- signal history ------------------------------------------------------
+
+  async getSignalHistory(limit = 50): Promise<SignalRecord[]> {
+    const { data, error } = await supabase
+      .from('mt5_signals')
+      .select('id, created_at, symbol, direction, entry, stop_loss, take_profit, confidence, executed, reason')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as SignalRecord[];
   }
 
-  // Add method to reset demo data
-  resetDemoData(): void {
-    this.mockPositions = [];
-    this.mockBalance = 10000;
-    this.saveMockData();
-    console.log('Demo data reset');
+  async clearSignalHistory() {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) throw new Error('Not signed in');
+    const { error } = await supabase.from('mt5_signals').delete().eq('user_id', userId);
+    if (error) throw new Error(error.message);
   }
+}
+
+/**
+ * Stable key so the same AI signal can never be executed twice, even if the
+ * analysis effect re-fires. Rounded to the minute + rounded prices.
+ */
+export function buildDedupeKey(signal: TradeSignal): string {
+  const minute = Math.floor(Date.now() / 60000);
+  return [
+    signal.symbol,
+    signal.direction.toUpperCase(),
+    signal.entry.toFixed(5),
+    (signal.stopLoss ?? 0).toFixed(5),
+    (signal.takeProfit ?? 0).toFixed(5),
+    Math.round(signal.confidence),
+    minute,
+  ].join('|');
 }
 
 export const mt5ApiService = new MT5ApiService();
-export type { MT5Account, TradeOrder, TradeResult, MT5Position, MT5AccountInfo };
+export { BridgeCallError };
