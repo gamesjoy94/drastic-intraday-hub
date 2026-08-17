@@ -1,221 +1,324 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { mt5ApiService, MT5Account, MT5Position, MT5AccountInfo } from '../services/mt5ApiService';
-import { tradeSignalProcessor, RiskSettings } from '../services/tradeSignalProcessor';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  mt5ApiService,
+  MT5AccountInput,
+  MT5AccountInfo,
+  MT5AccountRecord,
+  MT5Position,
+  OrderPlan,
+  RiskSettings,
+  SignalRecord,
+  TradeSignal,
+} from '../services/mt5ApiService';
 import { useToast } from './use-toast';
-import APIErrorHandler from '@/utils/apiErrorHandler';
-import DataValidator from '@/utils/dataValidation';
+
+const POLL_MS = 15000;
 
 export const useMT5Trading = () => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [account, setAccount] = useState<MT5Account | null>(null);
-  const [positions, setPositions] = useState<MT5Position[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [account, setAccount] = useState<MT5AccountRecord | null>(null);
   const [accountInfo, setAccountInfo] = useState<MT5AccountInfo | null>(null);
-  const [isAutoTradingEnabled, setIsAutoTradingEnabled] = useState(false);
+  const [positions, setPositions] = useState<MT5Position[]>([]);
+  const [riskSettings, setRiskSettings] = useState<RiskSettings | null>(null);
+  const [signalHistory, setSignalHistory] = useState<SignalRecord[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [tradingHistory, setTradingHistory] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<{ plan: OrderPlan; signal: TradeSignal } | null>(null);
   const { toast } = useToast();
 
+  const inFlight = useRef(false);
+
+  // ---- auth ---------------------------------------------------------------
   useEffect(() => {
-    // Check if already connected
-    setIsConnected(mt5ApiService.isAccountConnected());
-    setAccount(mt5ApiService.getConnectedAccount());
-    setIsAutoTradingEnabled(tradeSignalProcessor.isAutoTradingActive());
-    
-    // Load trading history
-    setTradingHistory(tradeSignalProcessor.getTradingHistory());
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setAuthReady(true);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    if (isConnected) {
-      // Update positions and account info every 30 seconds
-      interval = setInterval(async () => {
-        try {
-          const [newPositions, newAccountInfo] = await Promise.all([
-            mt5ApiService.getPositions(),
-            mt5ApiService.getAccountInfo()
-          ]);
-          setPositions(newPositions);
-          setAccountInfo(newAccountInfo);
-        } catch (error) {
-          console.error('Error updating MT5 data:', error);
-        }
-      }, 30000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isConnected]);
-
-  const connectToMT5 = async (accountData: MT5Account) => {
-    setIsConnecting(true);
+  // ---- initial load -------------------------------------------------------
+  const loadAll = useCallback(async () => {
+    if (!user) return;
     try {
-      const success = await mt5ApiService.connect(accountData);
-      
-      if (success) {
-        setIsConnected(true);
-        setAccount(accountData);
-        
-        // Load initial data
-        const [initialPositions, initialAccountInfo] = await Promise.all([
-          mt5ApiService.getPositions(),
-          mt5ApiService.getAccountInfo()
-        ]);
-        
-        setPositions(initialPositions);
-        setAccountInfo(initialAccountInfo);
-        
-        toast({
-          title: "MT5 Connected",
-          description: `Successfully connected to ${accountData.isDemo ? 'demo' : 'live'} account`,
-        });
-      } else {
-        toast({
-          title: "Connection Failed",
-          description: "Failed to connect to MT5 account. Please check your credentials.",
-          variant: "destructive",
-        });
-      }
+      const [acct, settings, history] = await Promise.all([
+        mt5ApiService.getActiveAccount(),
+        mt5ApiService.ensureRiskSettings(user.id),
+        mt5ApiService.getSignalHistory(),
+      ]);
+      setAccount(acct);
+      setRiskSettings(settings);
+      setSignalHistory(history);
     } catch (error) {
-      console.error('MT5 connection error:', error);
+      console.error('Failed to load MT5 state:', error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadAll();
+    } else {
+      setAccount(null);
+      setAccountInfo(null);
+      setPositions([]);
+      setRiskSettings(null);
+      setSignalHistory([]);
+    }
+  }, [user, loadAll]);
+
+  // ---- live broker polling ------------------------------------------------
+  const refresh = useCallback(async () => {
+    if (!account || inFlight.current) return;
+    inFlight.current = true;
+    setIsRefreshing(true);
+    try {
+      const [info, pos] = await Promise.all([
+        mt5ApiService.getAccountInfo(account.id),
+        mt5ApiService.getPositions(account.id),
+      ]);
+      setAccountInfo(info);
+      setPositions(pos);
+      setBridgeError(null);
+    } catch (error) {
+      setBridgeError((error as Error).message);
+    } finally {
+      inFlight.current = false;
+      setIsRefreshing(false);
+    }
+  }, [account]);
+
+  useEffect(() => {
+    if (!account) return;
+    refresh();
+    const interval = setInterval(refresh, POLL_MS);
+    return () => clearInterval(interval);
+  }, [account, refresh]);
+
+  // ---- connection ---------------------------------------------------------
+  const connectToMT5 = useCallback(async (input: MT5AccountInput) => {
+    setIsConnecting(true);
+    setBridgeError(null);
+    try {
+      const { account: acct, accountInfo: info } = await mt5ApiService.connect(input);
+      setAccount(acct);
+      setAccountInfo(info);
       toast({
-        title: "Connection Error",
-        description: "An error occurred while connecting to MT5",
-        variant: "destructive",
+        title: 'MT5 connected',
+        description: `${acct.label} — ${acct.is_demo ? 'DEMO' : 'LIVE'} account ${acct.login}`,
       });
+      return true;
+    } catch (error) {
+      const message = (error as Error).message;
+      setBridgeError(message);
+      toast({ title: 'Connection failed', description: message, variant: 'destructive' });
+      return false;
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [toast]);
 
-  const disconnectFromMT5 = async () => {
-    await mt5ApiService.disconnect();
-    setIsConnected(false);
-    setAccount(null);
-    setPositions([]);
-    setAccountInfo(null);
-    setIsAutoTradingEnabled(false);
-    tradeSignalProcessor.disableAutoTrading();
-    
-    toast({
-      title: "MT5 Disconnected",
-      description: "Successfully disconnected from MT5 account",
-    });
-  };
-
-  const toggleAutoTrading = () => {
-    if (isAutoTradingEnabled) {
-      tradeSignalProcessor.disableAutoTrading();
-      setIsAutoTradingEnabled(false);
-      toast({
-        title: "Auto Trading Disabled",
-        description: "Automatic trade execution has been disabled",
-      });
-    } else {
-      tradeSignalProcessor.enableAutoTrading();
-      setIsAutoTradingEnabled(true);
-      toast({
-        title: "Auto Trading Enabled",
-        description: "Automatic trade execution is now active",
-      });
-    }
-  };
-
-  const updateRiskSettings = (settings: Partial<RiskSettings>) => {
-    tradeSignalProcessor.setRiskSettings(settings);
-    toast({
-      title: "Risk Settings Updated",
-      description: "Risk management settings have been updated",
-    });
-  };
-
-  const processAISignal = useCallback(async (analysis: any) => {
+  const disconnectFromMT5 = useCallback(async () => {
+    if (!account) return;
     try {
-      // Validate the analysis data before processing
-      const validatedTradingData = DataValidator.validateTradingData(analysis.tradePlan);
-      
-      if (!validatedTradingData) {
-        console.warn('Invalid trading data received, skipping signal processing');
-        return false;
-      }
-
-      const result = await tradeSignalProcessor.processAISignal({
-        ...analysis,
-        tradePlan: validatedTradingData
-      });
-      
-      setTradingHistory(tradeSignalProcessor.getTradingHistory());
-      return result;
+      await mt5ApiService.disconnect(account.id);
     } catch (error) {
-      const apiError = APIErrorHandler.handleMT5Error(error);
-      console.error('Error processing AI signal:', apiError);
-      
+      console.error('Disconnect failed:', error);
+    }
+    setAccount(null);
+    setAccountInfo(null);
+    setPositions([]);
+    toast({ title: 'MT5 disconnected', description: 'The account is no longer active.' });
+  }, [account, toast]);
+
+  // ---- settings -----------------------------------------------------------
+  const updateRiskSettings = useCallback(async (patch: Partial<RiskSettings>) => {
+    try {
+      const updated = await mt5ApiService.updateRiskSettings(patch);
+      setRiskSettings(updated);
+      return updated;
+    } catch (error) {
       toast({
-        title: "Trade Signal Error",
-        description: apiError.message,
-        variant: "destructive",
+        title: 'Could not save settings',
+        description: (error as Error).message,
+        variant: 'destructive',
       });
-      
-      return false;
+      return null;
     }
   }, [toast]);
 
+  const toggleAutoTrading = useCallback(async (enabled: boolean) => {
+    const updated = await updateRiskSettings({ auto_trading_enabled: enabled });
+    if (updated) {
+      toast({
+        title: enabled ? 'Auto trading enabled' : 'Auto trading disabled',
+        description: enabled
+          ? 'AI signals will be sent to the broker after passing server-side risk checks.'
+          : 'Signals will be recorded but never executed.',
+      });
+    }
+  }, [toast, updateRiskSettings]);
+
+  const toggleKillSwitch = useCallback(async (engaged: boolean) => {
+    const updated = await updateRiskSettings({ kill_switch_engaged: engaged });
+    if (updated && engaged) {
+      toast({
+        title: 'Kill switch engaged',
+        description: 'All new orders are blocked server-side.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast, updateRiskSettings]);
+
+  // ---- signals ------------------------------------------------------------
+  const refreshHistory = useCallback(async () => {
+    try {
+      setSignalHistory(await mt5ApiService.getSignalHistory());
+    } catch (error) {
+      console.error('Failed to load signal history:', error);
+    }
+  }, []);
+
+  /**
+   * Runs the server-side dry run. If the order needs manual confirmation it is
+   * parked in `pendingOrder` for the UI; otherwise it is sent straight away.
+   */
+  const processAISignal = useCallback(async (signal: TradeSignal) => {
+    if (!account) return false;
+    try {
+      const plan = await mt5ApiService.previewOrder(signal);
+
+      if (plan.requiresConfirmation) {
+        setPendingOrder({ plan, signal });
+        toast({
+          title: 'Order awaiting confirmation',
+          description: `${plan.side} ${plan.volume} ${plan.symbol} on ${plan.isDemo ? 'DEMO' : 'LIVE'}`,
+        });
+        return false;
+      }
+
+      const result = await mt5ApiService.executeOrder(signal, false);
+      await Promise.all([refresh(), refreshHistory()]);
+      toast({
+        title: 'Trade executed',
+        description: `${plan.side} ${plan.volume} ${plan.symbol} @ ${result.order.fillPrice}`,
+      });
+      return true;
+    } catch (error) {
+      await refreshHistory();
+      toast({
+        title: 'Signal not executed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [account, refresh, refreshHistory, toast]);
+
+  const confirmPendingOrder = useCallback(async () => {
+    if (!pendingOrder) return false;
+    try {
+      const result = await mt5ApiService.executeOrder(pendingOrder.signal, true);
+      setPendingOrder(null);
+      await Promise.all([refresh(), refreshHistory()]);
+      toast({
+        title: 'Trade executed',
+        description: `Ticket ${result.order.ticket} @ ${result.order.fillPrice}`,
+      });
+      return true;
+    } catch (error) {
+      setPendingOrder(null);
+      await refreshHistory();
+      toast({
+        title: 'Execution failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [pendingOrder, refresh, refreshHistory, toast]);
+
+  const cancelPendingOrder = useCallback(() => setPendingOrder(null), []);
+
+  // ---- positions ----------------------------------------------------------
   const closePosition = useCallback(async (ticket: string) => {
     try {
-      const result = await mt5ApiService.closeTrade(ticket);
-      
-      if (result.success) {
-        // Refresh positions
-        const newPositions = await mt5ApiService.getPositions();
-        setPositions(newPositions);
-        
-        toast({
-          title: "Position Closed",
-          description: `Successfully closed position ${ticket}`,
-        });
-      } else {
-        const error = new Error(result.error || 'Failed to close position');
-        const apiError = APIErrorHandler.handleMT5Error(error);
-        
-        toast({
-          title: "Close Failed",
-          description: apiError.message,
-          variant: "destructive",
-        });
-      }
+      const res = await mt5ApiService.closePosition(ticket, account?.id);
+      if (res.failed.length) throw new Error(res.failed[0].error);
+      await refresh();
+      toast({ title: 'Position closed', description: `Ticket ${ticket}` });
     } catch (error) {
-      const apiError = APIErrorHandler.handleMT5Error(error);
-      console.error('Error closing position:', apiError);
-      
       toast({
-        title: "Close Error",
-        description: apiError.message,
-        variant: "destructive",
+        title: 'Close failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  }, [account, refresh, toast]);
+
+  const closeAllPositions = useCallback(async () => {
+    try {
+      const res = await mt5ApiService.closeAllPositions(account?.id);
+      await refresh();
+      toast({
+        title: 'Closed all positions',
+        description: `${res.closed.length} closed${res.failed.length ? `, ${res.failed.length} failed` : ''}`,
+        variant: res.failed.length ? 'destructive' : undefined,
+      });
+    } catch (error) {
+      toast({
+        title: 'Close all failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  }, [account, refresh, toast]);
+
+  const clearSignalHistory = useCallback(async () => {
+    try {
+      await mt5ApiService.clearSignalHistory();
+      setSignalHistory([]);
+    } catch (error) {
+      toast({
+        title: 'Could not clear history',
+        description: (error as Error).message,
+        variant: 'destructive',
       });
     }
   }, [toast]);
 
   return {
-    isConnected,
+    user,
+    authReady,
+    isConnected: !!account,
     account,
-    positions,
     accountInfo,
-    isAutoTradingEnabled,
+    positions,
+    riskSettings,
+    signalHistory,
     isConnecting,
-    tradingHistory,
+    isRefreshing,
+    bridgeError,
+    pendingOrder,
+    isAutoTradingEnabled: !!riskSettings?.auto_trading_enabled && !riskSettings?.kill_switch_engaged,
     connectToMT5,
     disconnectFromMT5,
-    toggleAutoTrading,
+    refresh,
     updateRiskSettings,
+    toggleAutoTrading,
+    toggleKillSwitch,
     processAISignal,
+    confirmPendingOrder,
+    cancelPendingOrder,
     closePosition,
-    getRiskSettings: () => tradeSignalProcessor.getRiskSettings(),
-    clearTradingHistory: () => {
-      tradeSignalProcessor.clearTradingHistory();
-      setTradingHistory([]);
-    }
+    closeAllPositions,
+    clearSignalHistory,
   };
 };
