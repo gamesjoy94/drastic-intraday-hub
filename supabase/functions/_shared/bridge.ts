@@ -112,19 +112,34 @@ function bridgeConfig() {
   const key = Deno.env.get("MT5_BRIDGE_KEY");
   if (!baseUrl || !key) {
     throw new BridgeError(
-      "MT5 bridge is not configured. Add MT5_BRIDGE_URL and MT5_BRIDGE_KEY as secrets.",
+      "No MT5 backend configured. Either set MT5_MCP_URL (MetaTrader 5 built-in MCP server) " +
+        "or MT5_BRIDGE_URL + MT5_BRIDGE_KEY (self-hosted bridge).",
       503,
     );
   }
   return { baseUrl: baseUrl.replace(/\/+$/, ""), key };
 }
 
-/** Calls the self-hosted MT5 bridge. Throws BridgeError on any failure. */
+/**
+ * Calls the MT5 backend. When MT5_MCP_URL is set we speak MCP to MetaTrader 5's
+ * built-in server; otherwise we fall back to the self-hosted REST bridge.
+ * Throws BridgeError on any failure.
+ */
 export async function callBridge<T>(
   path: string,
   init: { method?: string; body?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
+  if (mcpConfig()) {
+    try {
+      return await callViaMcp<T>(path, (init.body ?? {}) as Record<string, unknown>, init.timeoutMs);
+    } catch (err) {
+      if (err instanceof McpError) throw new BridgeError(err.message, err.status);
+      throw err;
+    }
+  }
+
   const { baseUrl, key } = bridgeConfig();
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), init.timeoutMs ?? 15000);
 
