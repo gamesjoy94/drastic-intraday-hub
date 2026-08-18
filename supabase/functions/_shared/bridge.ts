@@ -3,6 +3,10 @@
 // See bridge/README.md in the repo root for how to run it.
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { callMcpTool, listMcpTools, McpError, mcpConfig, resolveTool } from "./mcp.ts";
+
+export { listMcpTools, mcpConfig };
+
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
