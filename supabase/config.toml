@@ -18,3 +18,7 @@ verify_jwt = false
 
 [functions.mt5-close]
 verify_jwt = false
+
+[functions.mt5-mcp-tools]
+verify_jwt = false
+

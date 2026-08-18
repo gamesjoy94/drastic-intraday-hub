@@ -72,3 +72,34 @@ Extend the same pattern with `mt5.positions_get()`, `mt5.symbol_info()` /
 
 - `MT5_BRIDGE_URL` — e.g. `https://mt5.yourdomain.com`
 - `MT5_BRIDGE_KEY` — the shared secret above
+
+---
+
+## Option B (no Python): MetaTrader 5's built-in MCP server
+
+MT5 build 5200+ ships an MCP server: **Tools → Options → MCP → Enable internal server**.
+It gives you an address like `http://127.0.0.1:22346/mcp` and an API key.
+
+The terminal binds to `127.0.0.1` only, so it must be exposed through a tunnel before
+Supabase edge functions can reach it:
+
+```bash
+# on the VPS running the MT5 terminal
+cloudflared tunnel --url http://127.0.0.1:22346
+# -> https://<random>.trycloudflare.com  (use a named tunnel for production)
+```
+
+Then set these Supabase secrets and the edge functions switch to MCP mode automatically
+(no `MT5_BRIDGE_URL` needed):
+
+- `MT5_MCP_URL` — e.g. `https://mt5-mcp.yourdomain.com/mcp`
+- `MT5_MCP_API_KEY` — the API key shown in the MCP tab
+
+Tool names vary between MT5 builds, so the layer resolves them from `tools/list`
+(`account_info`, `positions_get`, `symbol_info`, `order_send`, `position_close` and common
+aliases). Call the `mt5-mcp-tools` edge function to see exactly what your terminal exposes;
+if a name doesn't match, add it to the candidate list in
+`supabase/functions/_shared/bridge.ts`.
+
+Keep the tunnel private (Cloudflare Access or an allowlist) — anyone with the URL and API
+key can trade on the account.
