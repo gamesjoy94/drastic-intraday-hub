@@ -41,7 +41,7 @@ export type Database = {
           server_name: string
           symbol_suffix?: string
           updated_at?: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           bridge_account_id?: string | null
@@ -97,7 +97,7 @@ export type Database = {
           take_profit?: number | null
           ticket?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string
           volume: number
         }
         Update: {
@@ -168,7 +168,7 @@ export type Database = {
           updated_at?: string
           use_stop_loss?: boolean
           use_take_profit?: boolean
-          user_id: string
+          user_id?: string
         }
         Update: {
           allowed_symbols?: string[]
@@ -221,7 +221,7 @@ export type Database = {
           stop_loss?: number | null
           symbol: string
           take_profit?: number | null
-          user_id: string
+          user_id?: string
         }
         Update: {
           account_id?: string | null
