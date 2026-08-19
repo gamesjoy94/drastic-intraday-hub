@@ -31,28 +31,14 @@ export interface AuthContext {
   admin: SupabaseClient;
 }
 
-/** Validates the caller's JWT and returns a service-role client for writes. */
-export async function requireUser(req: Request): Promise<AuthContext | Response> {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return errorResponse("Missing authorization header", 401);
-  }
+export const PUBLIC_USER_ID = "00000000-0000-0000-0000-000000000000";
 
+/** This app is fully public: no sign-in, one shared workspace. */
+export async function requireUser(_req: Request): Promise<AuthContext> {
   const url = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-  const authClient = createClient(url, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const { data, error } = await authClient.auth.getUser();
-  if (error || !data.user) {
-    return errorResponse("Invalid or expired session", 401);
-  }
-
   return {
-    userId: data.user.id,
+    userId: PUBLIC_USER_ID,
     admin: createClient(url, serviceKey, { auth: { persistSession: false } }),
   };
 }

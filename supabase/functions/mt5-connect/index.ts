@@ -22,7 +22,6 @@ Deno.serve(async (req) => {
 
   try {
     const auth = await requireUser(req);
-    if (auth instanceof Response) return auth;
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {

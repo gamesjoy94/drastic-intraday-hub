@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,15 +28,12 @@ import {
   Trash2,
   BarChart3,
   ShieldAlert,
-  LogIn,
 } from 'lucide-react';
 import { useMT5Trading } from '@/hooks/useMT5Trading';
 import { MT5AccountInput, RiskSettings } from '@/services/mt5ApiService';
 
 const MT5TradingPanel = () => {
   const {
-    user,
-    authReady,
     isConnected,
     account,
     positions,
@@ -96,29 +92,6 @@ const MT5TradingPanel = () => {
     }).format(amount);
 
   const totalPL = positions.reduce((sum, pos) => sum + pos.profit, 0);
-
-  // ---- signed out ----------------------------------------------------------
-  if (authReady && !user) {
-    return (
-      <Card className="bg-slate-800 border-slate-700 w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-slate-200 flex items-center gap-2">
-            <LogIn className="w-5 h-5" />
-            Sign in to trade
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-slate-400 text-sm">
-            Real MT5 trading is tied to your account so your broker connection and risk
-            limits stay private and are enforced on the server.
-          </p>
-          <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-            <Link to="/auth">Sign in or create an account</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // ---- not connected -------------------------------------------------------
   if (!isConnected) {

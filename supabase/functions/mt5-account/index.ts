@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
 
   try {
     const auth = await requireUser(req);
-    if (auth instanceof Response) return auth;
 
     const raw = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const parsed = BodySchema.safeParse(raw);
