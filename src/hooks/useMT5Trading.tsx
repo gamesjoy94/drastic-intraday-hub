@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import {
   mt5ApiService,
   MT5AccountInput,
@@ -17,8 +15,6 @@ import { useToast } from './use-toast';
 const POLL_MS = 15000;
 
 export const useMT5Trading = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
   const [account, setAccount] = useState<MT5AccountRecord | null>(null);
   const [accountInfo, setAccountInfo] = useState<MT5AccountInfo | null>(null);
   const [positions, setPositions] = useState<MT5Position[]>([]);
@@ -32,26 +28,12 @@ export const useMT5Trading = () => {
 
   const inFlight = useRef(false);
 
-  // ---- auth ---------------------------------------------------------------
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setAuthReady(true);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setAuthReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   // ---- initial load -------------------------------------------------------
   const loadAll = useCallback(async () => {
-    if (!user) return;
     try {
       const [acct, settings, history] = await Promise.all([
         mt5ApiService.getActiveAccount(),
-        mt5ApiService.ensureRiskSettings(user.id),
+        mt5ApiService.ensureRiskSettings(),
         mt5ApiService.getSignalHistory(),
       ]);
       setAccount(acct);
@@ -60,19 +42,11 @@ export const useMT5Trading = () => {
     } catch (error) {
       console.error('Failed to load MT5 state:', error);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      loadAll();
-    } else {
-      setAccount(null);
-      setAccountInfo(null);
-      setPositions([]);
-      setRiskSettings(null);
-      setSignalHistory([]);
-    }
-  }, [user, loadAll]);
+    loadAll();
+  }, [loadAll]);
 
   // ---- live broker polling ------------------------------------------------
   const refresh = useCallback(async () => {
@@ -295,8 +269,6 @@ export const useMT5Trading = () => {
   }, [toast]);
 
   return {
-    user,
-    authReady,
     isConnected: !!account,
     account,
     accountInfo,

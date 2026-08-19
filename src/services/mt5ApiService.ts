@@ -1,5 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
+/** This app is fully public — everything belongs to one shared workspace row. */
+export const PUBLIC_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export interface MT5AccountInput {
   label: string;
   login: string;
@@ -224,7 +227,7 @@ class MT5ApiService {
     return rest as RiskSettings;
   }
 
-  async ensureRiskSettings(userId: string): Promise<RiskSettings> {
+  async ensureRiskSettings(userId: string = PUBLIC_USER_ID): Promise<RiskSettings> {
     const existing = await this.getRiskSettings();
     if (existing) return existing;
     const { data, error } = await supabase
@@ -238,14 +241,10 @@ class MT5ApiService {
   }
 
   async updateRiskSettings(patch: Partial<RiskSettings>): Promise<RiskSettings> {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) throw new Error('Not signed in');
-
     const { data, error } = await supabase
       .from('mt5_risk_settings')
       .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
+      .eq('user_id', PUBLIC_USER_ID)
       .select('*')
       .single();
     if (error) throw new Error(error.message);
@@ -266,10 +265,7 @@ class MT5ApiService {
   }
 
   async clearSignalHistory() {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) throw new Error('Not signed in');
-    const { error } = await supabase.from('mt5_signals').delete().eq('user_id', userId);
+    const { error } = await supabase.from('mt5_signals').delete().eq('user_id', PUBLIC_USER_ID);
     if (error) throw new Error(error.message);
   }
 }

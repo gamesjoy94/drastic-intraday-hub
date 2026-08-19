@@ -7,7 +7,6 @@ Deno.serve(async (req) => {
 
   try {
     const auth = await requireUser(req);
-    if (auth instanceof Response) return auth;
 
     if (!mcpConfig()) {
       return errorResponse("MT5_MCP_URL is not set — MCP mode is off (using the REST bridge).", 503);
