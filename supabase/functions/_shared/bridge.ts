@@ -284,14 +284,17 @@ function unwrap(res: any, keys: string[]): any {
 
 function normalizeAccount(raw: any): BridgeAccountInfo {
   const a = unwrap(raw, ["account", "account_info", "result", "data"]) ?? {};
-  const tradeMode = pick<any>(a, ["trade_mode", "tradeMode"]);
+  const tradeMode = pick<any>(a, ["type", "trade_mode", "tradeMode"]);
+  const equity = num(pick(a, ["equity"]));
+  const margin = num(pick(a, ["margin"]));
   return {
     login: String(pick<any>(a, ["login", "account", "account_id"]) ?? ""),
     balance: num(pick(a, ["balance"])),
-    equity: num(pick(a, ["equity"])),
-    margin: num(pick(a, ["margin"])),
+    equity,
+    margin,
     freeMargin: num(pick(a, ["margin_free", "freeMargin", "free_margin"])),
-    marginLevel: num(pick(a, ["margin_level", "marginLevel"])),
+    marginLevel: num(pick(a, ["margin_level", "marginLevel"])) ||
+      (margin > 0 ? (equity / margin) * 100 : 0),
     currency: String(pick<any>(a, ["currency"]) ?? "USD"),
     isDemo:
       typeof pick(a, ["isDemo", "is_demo"]) === "boolean"
@@ -303,43 +306,52 @@ function normalizeAccount(raw: any): BridgeAccountInfo {
 }
 
 function normalizePosition(p: any): BridgePosition {
-  const rawType = pick<any>(p, ["type", "side", "direction"]);
+  const rawType = pick<any>(p, ["action", "type", "side", "direction"]);
   const type =
     typeof rawType === "number"
       ? rawType === 0 ? "BUY" : "SELL"
       : String(rawType ?? "").toUpperCase().includes("SELL") ? "SELL" : "BUY";
   return {
-    ticket: String(pick<any>(p, ["ticket", "id", "position_id"]) ?? ""),
+    ticket: String(pick<any>(p, ["position_id", "ticket", "id"]) ?? ""),
     symbol: String(pick<any>(p, ["symbol"]) ?? ""),
     type: type as "BUY" | "SELL",
     volume: num(pick(p, ["volume", "lots", "size"])),
     openPrice: num(pick(p, ["price_open", "openPrice", "open_price"])),
-    currentPrice: num(pick(p, ["price_current", "currentPrice", "current_price"])),
+    currentPrice: num(pick(p, ["price_last", "price_current", "currentPrice", "current_price"])),
     profit: num(pick(p, ["profit", "pnl"])),
-    stopLoss: num(pick(p, ["sl", "stopLoss", "stop_loss"])) || undefined,
-    takeProfit: num(pick(p, ["tp", "takeProfit", "take_profit"])) || undefined,
-    openTime: String(pick<any>(p, ["time", "openTime", "open_time"]) ?? new Date().toISOString()),
+    stopLoss: num(pick(p, ["sl", "stopLoss", "stop_loss", "price_sl"])) || undefined,
+    takeProfit: num(pick(p, ["tp", "takeProfit", "take_profit", "price_tp"])) || undefined,
+    openTime: String(pick<any>(p, ["create_time", "time", "openTime", "open_time"]) ?? new Date().toISOString()),
   };
 }
 
 function normalizeSymbol(raw: any, requested: string): BridgeSymbolInfo {
-  const s = unwrap(raw, ["symbol_info", "symbolInfo", "info", "result", "data"]) ?? {};
+  let s = unwrap(raw, ["symbols", "symbol_info", "symbolInfo", "info", "result", "data"]) ?? {};
+  if (Array.isArray(s)) {
+    s = s.find((x: any) => String(x?.symbol ?? "").toLowerCase() === requested.toLowerCase()) ?? s[0] ?? {};
+  }
   const tick = unwrap(raw, ["tick"]) ?? s;
   const point = num(pick(s, ["point"])) || 0.00001;
+  const contractSize = num(pick(s, ["trade_contract_size", "contractSize", "contract_size"])) || 100000;
+  const tickSize = num(pick(s, ["trade_tick_size", "tickSize", "tick_size"])) || point;
+  // Some MT5 builds report tick_value/tick_size as 0 over MCP. For symbols quoted
+  // in the account currency, one tick is worth contractSize * tickSize per lot.
+  const tickValue = num(pick(s, ["trade_tick_value", "tickValue", "tick_value"])) || contractSize * tickSize;
   return {
     symbol: String(pick<any>(s, ["symbol", "name"]) ?? requested),
     bid: num(pick(tick, ["bid"]), pick(s, ["bid"])),
     ask: num(pick(tick, ["ask"]), pick(s, ["ask"])),
     digits: num(pick(s, ["digits"])) || 5,
     point,
-    tickValue: num(pick(s, ["trade_tick_value", "tickValue", "tick_value"])),
-    tickSize: num(pick(s, ["trade_tick_size", "tickSize", "tick_size"])) || point,
-    contractSize: num(pick(s, ["trade_contract_size", "contractSize", "contract_size"])) || 100000,
+    tickValue,
+    tickSize,
+    contractSize,
     volumeMin: num(pick(s, ["volume_min", "volumeMin"])) || 0.01,
     volumeMax: num(pick(s, ["volume_max", "volumeMax"])) || 100,
     volumeStep: num(pick(s, ["volume_step", "volumeStep"])) || 0.01,
     stopsLevel: num(pick(s, ["trade_stops_level", "stopsLevel", "stops_level"])),
-    tradeAllowed: pick<boolean>(s, ["tradeAllowed", "trade_allowed"]) ?? true,
+    tradeAllowed: pick<boolean>(s, ["tradeAllowed", "trade_allowed"]) ??
+      (pick<string>(s, ["trade_mode_name"]) ? pick<string>(s, ["trade_mode_name"]) === "full" : true),
   };
 }
 
