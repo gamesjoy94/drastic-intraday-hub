@@ -362,50 +362,47 @@ async function callViaMcp<T>(
 ): Promise<T> {
   switch (path) {
     case "/account": {
-      const tool = await resolveTool(["account_info", "get_account_info", "accountInfo", "account"]);
+      const tool = await resolveTool([
+        "get_trading_account_info",
+        "account_info",
+        "get_account_info",
+      ]);
       return normalizeAccount(await callMcpTool<any>(tool, {}, timeoutMs)) as unknown as T;
     }
     case "/positions": {
-      const tool = await resolveTool(["positions_get", "get_positions", "positions"]);
+      const tool = await resolveTool([
+        "get_trading_open_positions",
+        "positions_get",
+        "get_positions",
+      ]);
       const res = await callMcpTool<any>(tool, {}, timeoutMs);
       const list = unwrap(res, ["positions", "result", "data"]) ?? [];
       return { positions: (Array.isArray(list) ? list : []).map(normalizePosition) } as unknown as T;
     }
     case "/symbol": {
       const symbol = String(body.symbol ?? "");
-      const tool = await resolveTool(["symbol_info", "get_symbol_info", "symbolInfo", "symbol"]);
+      const tool = await resolveTool([
+        "get_marketwatch_symbols",
+        "symbol_info",
+        "get_symbol_info",
+      ]);
       const info = await callMcpTool<any>(tool, { symbol }, timeoutMs);
-      let merged = info;
-      try {
-        const tickTool = await resolveTool(["symbol_info_tick", "get_tick", "tick"]);
-        merged = { ...info, tick: unwrap(await callMcpTool<any>(tickTool, { symbol }, timeoutMs), ["tick", "result", "data"]) };
-      } catch {
-        /* some builds return bid/ask on symbol_info already */
-      }
-      return normalizeSymbol(merged, symbol) as unknown as T;
+      return normalizeSymbol(info, symbol) as unknown as T;
     }
     case "/order": {
-      const tool = await resolveTool(["order_send", "place_order", "trade_open", "order"]);
-      const side = String(body.side ?? "BUY").toUpperCase();
-      const res: any = await callMcpTool<any>(
-        tool,
-        {
-          symbol: body.symbol,
-          action: side === "SELL" ? "SELL" : "BUY",
-          type: side === "SELL" ? "SELL" : "BUY",
-          volume: body.volume,
-          price: body.price,
-          sl: body.stopLoss ?? 0,
-          stop_loss: body.stopLoss ?? 0,
-          tp: body.takeProfit ?? 0,
-          take_profit: body.takeProfit ?? 0,
-          deviation: body.deviationPoints ?? 20,
-          comment: body.comment ?? "lovable",
-          magic: body.magic ?? 0,
-        },
-        timeoutMs ?? 30000,
-      );
-      const r = unwrap(res, ["order", "result", "data"]) ?? {};
+      const tool = await resolveTool(["trade_send_market_order", "order_send", "place_order"]);
+      const side = String(body.side ?? "BUY").toLowerCase() === "sell" ? "sell" : "buy";
+      const args: Record<string, unknown> = {
+        symbol: body.symbol,
+        type: side,
+        volume: body.volume,
+      };
+      if (body.stopLoss) args.sl = body.stopLoss;
+      if (body.takeProfit) args.tp = body.takeProfit;
+      if (body.comment) args.comment = String(body.comment).slice(0, 31);
+
+      const res: any = await callMcpTool<any>(tool, args, timeoutMs ?? 30000);
+      const r = unwrap(res, ["order", "result", "deal", "data"]) ?? {};
       const retcode = num(pick(r, ["retcode", "return_code"]));
       if (retcode && retcode !== 10009) {
         throw new McpError(
@@ -414,25 +411,44 @@ async function callViaMcp<T>(
         );
       }
       return {
-        ticket: String(pick<any>(r, ["order", "ticket", "deal", "position"]) ?? ""),
-        fillPrice: num(pick(r, ["price", "fillPrice", "fill_price"]), body.price),
+        ticket: String(
+          pick<any>(r, ["position_id", "position", "order", "ticket", "deal"]) ??
+            pick<any>(res, ["position_id", "order", "ticket"]) ??
+            "",
+        ),
+        fillPrice: num(pick(r, ["price", "price_open", "fillPrice", "fill_price"]), body.price),
         retcode,
         comment: pick<string>(r, ["comment"]) ?? "",
       } as unknown as T;
     }
     case "/close": {
-      const tool = await resolveTool(["position_close", "close_position", "trade_close", "close"]);
+      const tool = await resolveTool([
+        "trade_close_single_position",
+        "position_close",
+        "close_position",
+      ]);
+      const ticket = String(body.ticket ?? "");
+
+      // This MT5 build requires the symbol as a safety check; look it up when
+      // the caller only knows the ticket.
+      let symbol = String(body.symbol ?? "");
+      if (!symbol) {
+        const list = await callViaMcp<{ positions: BridgePosition[] }>("/positions", {}, timeoutMs);
+        symbol = list.positions.find((p) => String(p.ticket) === ticket)?.symbol ?? "";
+        if (!symbol) throw new McpError(`No open position with ticket ${ticket}`, 404);
+      }
+
       const res: any = await callMcpTool<any>(
         tool,
-        { ticket: body.ticket, position: body.ticket, position_id: body.ticket },
+        { symbol, position_ticket: Number(ticket) },
         timeoutMs ?? 30000,
       );
       const r = unwrap(res, ["result", "data"]) ?? {};
       const retcode = num(pick(r, ["retcode", "return_code"]));
       if (retcode && retcode !== 10009) {
-        throw new McpError(`MT5 could not close ticket ${body.ticket} (retcode ${retcode})`, 502);
+        throw new McpError(`MT5 could not close ticket ${ticket} (retcode ${retcode})`, 502);
       }
-      return { ticket: String(body.ticket ?? ""), retcode } as unknown as T;
+      return { ticket, retcode } as unknown as T;
     }
     default:
       throw new McpError(`Unsupported MT5 operation ${path}`, 501);
