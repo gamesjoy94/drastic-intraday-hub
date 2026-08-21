@@ -218,10 +218,10 @@ class MT5ApiService {
     return res.plan;
   }
 
-  async executeOrder(signal: TradeSignal, confirmed: boolean) {
+  async executeOrder(signal: TradeSignal, confirmed: boolean, entryIndex = 0) {
     return invoke<{ executed: boolean; plan: OrderPlan; order: { ticket: string; fillPrice: number } }>(
       'mt5-execute',
-      { ...signal, dedupeKey: buildDedupeKey(signal), confirmed },
+      { ...signal, dedupeKey: buildDedupeKey(signal, entryIndex), confirmed },
     );
   }
 
