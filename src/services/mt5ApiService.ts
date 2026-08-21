@@ -285,7 +285,7 @@ class MT5ApiService {
  * Stable key so the same AI signal can never be executed twice, even if the
  * analysis effect re-fires. Rounded to the minute + rounded prices.
  */
-export function buildDedupeKey(signal: TradeSignal): string {
+export function buildDedupeKey(signal: TradeSignal, entryIndex = 0): string {
   const minute = Math.floor(Date.now() / 60000);
   return [
     signal.symbol,
@@ -295,6 +295,7 @@ export function buildDedupeKey(signal: TradeSignal): string {
     (signal.takeProfit ?? 0).toFixed(5),
     Math.round(signal.confidence),
     minute,
+    entryIndex,
   ].join('|');
 }
 
