@@ -58,6 +58,17 @@ export interface RiskSettings {
   auto_trading_enabled: boolean;
   require_manual_confirm: boolean;
   kill_switch_engaged: boolean;
+  /** Automation */
+  auto_analysis_enabled: boolean;
+  auto_analysis_interval_minutes: number;
+  auto_confidence_threshold: number;
+  auto_entries_per_signal: number;
+  auto_live_enabled: boolean;
+  auto_manage_enabled: boolean;
+  auto_close_profit_usd: number;
+  auto_close_loss_usd: number;
+  auto_close_max_age_minutes: number;
+  auto_close_on_reverse: boolean;
 }
 
 export interface OrderPlan {
