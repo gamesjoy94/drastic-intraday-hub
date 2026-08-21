@@ -13,6 +13,10 @@ import {
 import { useToast } from './use-toast';
 
 const POLL_MS = 15000;
+const SETTINGS_EVENT = 'mt5-risk-settings-updated';
+
+/** Only one mounted instance runs the automated position monitor. */
+let monitorOwner: symbol | null = null;
 
 export const useMT5Trading = () => {
   const [account, setAccount] = useState<MT5AccountRecord | null>(null);
@@ -47,6 +51,16 @@ export const useMT5Trading = () => {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  // Keep every mounted instance of this hook in sync with settings changes.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<RiskSettings>).detail;
+      if (detail) setRiskSettings(detail);
+    };
+    window.addEventListener(SETTINGS_EVENT, handler);
+    return () => window.removeEventListener(SETTINGS_EVENT, handler);
+  }, []);
 
   // ---- live broker polling ------------------------------------------------
   const refresh = useCallback(async () => {
@@ -117,6 +131,7 @@ export const useMT5Trading = () => {
     try {
       const updated = await mt5ApiService.updateRiskSettings(patch);
       setRiskSettings(updated);
+      window.dispatchEvent(new CustomEvent(SETTINGS_EVENT, { detail: updated }));
       return updated;
     } catch (error) {
       toast({
@@ -268,6 +283,108 @@ export const useMT5Trading = () => {
     }
   }, [toast]);
 
+
+  // ---- automated execution ------------------------------------------------
+  /**
+   * Executes an analysis-driven signal without the confirmation dialog.
+   * Live accounts still require the user to have opted into auto-live.
+   */
+  const executeAutoSignal = useCallback(async (signal: TradeSignal, entryIndex = 0) => {
+    if (!account || !riskSettings) return false;
+    if (riskSettings.kill_switch_engaged) return false;
+    if (!account.is_demo && !riskSettings.auto_live_enabled) {
+      toast({
+        title: 'Auto trade blocked on live account',
+        description: 'Enable "Allow auto-trading on live accounts" to let automation place real orders.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    try {
+      const result = await mt5ApiService.executeOrder(signal, true, entryIndex);
+      await Promise.all([refresh(), refreshHistory()]);
+      toast({
+        title: 'Auto trade executed',
+        description: `${result.plan.side} ${result.plan.volume} ${result.plan.symbol} @ ${result.order.fillPrice}`,
+      });
+      return true;
+    } catch (error) {
+      await refreshHistory();
+      console.warn('Auto signal skipped:', (error as Error).message);
+      return false;
+    }
+  }, [account, riskSettings, refresh, refreshHistory, toast]);
+
+  // ---- automated trade management ----------------------------------------
+  const instanceId = useRef(Symbol('mt5-trading'));
+  const closing = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (monitorOwner === null) monitorOwner = instanceId.current;
+    const id = instanceId.current;
+    return () => {
+      if (monitorOwner === id) monitorOwner = null;
+    };
+  }, []);
+
+  const autoManagePositions = useCallback(async () => {
+    if (monitorOwner !== instanceId.current) return;
+    if (!riskSettings?.auto_manage_enabled || !positions.length) return;
+
+    const profitTarget = Number(riskSettings.auto_close_profit_usd) || 0;
+    const lossCap = Number(riskSettings.auto_close_loss_usd) || 0;
+    const maxAge = Number(riskSettings.auto_close_max_age_minutes) || 0;
+
+    for (const position of positions) {
+      if (closing.current.has(position.ticket)) continue;
+
+      const ageMinutes = position.openTime
+        ? (Date.now() - new Date(position.openTime).getTime()) / 60000
+        : 0;
+
+      let reason: string | null = null;
+      if (profitTarget > 0 && position.profit >= profitTarget) reason = `profit target ${profitTarget}`;
+      else if (lossCap > 0 && position.profit <= -lossCap) reason = `loss cap ${lossCap}`;
+      else if (maxAge > 0 && ageMinutes >= maxAge) reason = `max age ${maxAge}m`;
+
+      if (!reason) continue;
+
+      closing.current.add(position.ticket);
+      try {
+        await mt5ApiService.closePosition(position.ticket, account?.id);
+        toast({ title: 'Auto-closed position', description: `#${position.ticket} — ${reason}` });
+      } catch (error) {
+        console.error('Auto close failed:', error);
+      } finally {
+        closing.current.delete(position.ticket);
+      }
+    }
+    await refresh();
+  }, [account, positions, refresh, riskSettings, toast]);
+
+  useEffect(() => {
+    autoManagePositions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positions]);
+
+  /** Closes any open position that opposes a fresh signal direction. */
+  const closeOpposingPositions = useCallback(async (symbol: string, side: 'BUY' | 'SELL') => {
+    if (!riskSettings?.auto_close_on_reverse) return;
+    const base = symbol.toUpperCase();
+    const opposing = positions.filter(
+      (p) => p.symbol.toUpperCase().startsWith(base) && p.type !== side,
+    );
+    for (const position of opposing) {
+      try {
+        await mt5ApiService.closePosition(position.ticket, account?.id);
+        toast({ title: 'Reversed out', description: `Closed #${position.ticket} on opposite signal` });
+      } catch (error) {
+        console.error('Reverse close failed:', error);
+      }
+    }
+    if (opposing.length) await refresh();
+  }, [account, positions, refresh, riskSettings, toast]);
+
   return {
     isConnected: !!account,
     account,
@@ -292,5 +409,7 @@ export const useMT5Trading = () => {
     closePosition,
     closeAllPositions,
     clearSignalHistory,
+    executeAutoSignal,
+    closeOpposingPositions,
   };
 };
