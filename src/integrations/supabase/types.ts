@@ -140,6 +140,16 @@ export type Database = {
       mt5_risk_settings: {
         Row: {
           allowed_symbols: string[]
+          auto_analysis_enabled: boolean
+          auto_analysis_interval_minutes: number
+          auto_close_loss_usd: number
+          auto_close_max_age_minutes: number
+          auto_close_on_reverse: boolean
+          auto_close_profit_usd: number
+          auto_confidence_threshold: number
+          auto_entries_per_signal: number
+          auto_live_enabled: boolean
+          auto_manage_enabled: boolean
           auto_trading_enabled: boolean
           created_at: string
           kill_switch_engaged: boolean
@@ -156,6 +166,16 @@ export type Database = {
         }
         Insert: {
           allowed_symbols?: string[]
+          auto_analysis_enabled?: boolean
+          auto_analysis_interval_minutes?: number
+          auto_close_loss_usd?: number
+          auto_close_max_age_minutes?: number
+          auto_close_on_reverse?: boolean
+          auto_close_profit_usd?: number
+          auto_confidence_threshold?: number
+          auto_entries_per_signal?: number
+          auto_live_enabled?: boolean
+          auto_manage_enabled?: boolean
           auto_trading_enabled?: boolean
           created_at?: string
           kill_switch_engaged?: boolean
@@ -172,6 +192,16 @@ export type Database = {
         }
         Update: {
           allowed_symbols?: string[]
+          auto_analysis_enabled?: boolean
+          auto_analysis_interval_minutes?: number
+          auto_close_loss_usd?: number
+          auto_close_max_age_minutes?: number
+          auto_close_on_reverse?: boolean
+          auto_close_profit_usd?: number
+          auto_confidence_threshold?: number
+          auto_entries_per_signal?: number
+          auto_live_enabled?: boolean
+          auto_manage_enabled?: boolean
           auto_trading_enabled?: boolean
           created_at?: string
           kill_switch_engaged?: boolean

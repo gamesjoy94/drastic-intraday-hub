@@ -590,6 +590,121 @@ const MT5TradingPanel = () => {
                     </div>
                   </div>
 
+                  <div className="border-t border-slate-700 pt-4 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-200 font-medium">
+                      <Bot className="w-4 h-4 text-emerald-400" />
+                      Auto-trade from analysis
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-slate-300">Run XAUUSD analysis automatically</Label>
+                        <p className="text-slate-500 text-xs">Signals above the threshold are sent to MT5.</p>
+                      </div>
+                      <Switch
+                        checked={riskForm.auto_analysis_enabled}
+                        onCheckedChange={(v) => setRiskForm({ ...riskForm, auto_analysis_enabled: v })}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm">
+                        <Label className="text-slate-300">Confidence threshold</Label>
+                        <span className="text-emerald-400 font-medium">{riskForm.auto_confidence_threshold}%</span>
+                      </div>
+                      <Slider
+                        value={[riskForm.auto_confidence_threshold]}
+                        min={50}
+                        max={99}
+                        step={1}
+                        onValueChange={([v]) => setRiskForm({ ...riskForm, auto_confidence_threshold: v })}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-slate-300">Analysis interval (min)</Label>
+                        <Input
+                          type="number" min="1" max="60"
+                          value={riskForm.auto_analysis_interval_minutes}
+                          onChange={(e) => setRiskForm({ ...riskForm, auto_analysis_interval_minutes: parseInt(e.target.value, 10) || 2 })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300">Entries per signal</Label>
+                        <Input
+                          type="number" min="1" max="5"
+                          value={riskForm.auto_entries_per_signal}
+                          onChange={(e) => setRiskForm({ ...riskForm, auto_entries_per_signal: parseInt(e.target.value, 10) || 1 })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-slate-300">Allow auto-trading on live accounts</Label>
+                        <p className="text-slate-500 text-xs">Off = automation only touches demo accounts.</p>
+                      </div>
+                      <Switch
+                        checked={riskForm.auto_live_enabled}
+                        onCheckedChange={(v) => setRiskForm({ ...riskForm, auto_live_enabled: v })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-slate-300">Auto-manage open trades</Label>
+                        <p className="text-slate-500 text-xs">Close trades on the rules below.</p>
+                      </div>
+                      <Switch
+                        checked={riskForm.auto_manage_enabled}
+                        onCheckedChange={(v) => setRiskForm({ ...riskForm, auto_manage_enabled: v })}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-slate-300 text-xs">Take profit ($)</Label>
+                        <Input
+                          type="number" step="0.5" min="0"
+                          value={riskForm.auto_close_profit_usd}
+                          onChange={(e) => setRiskForm({ ...riskForm, auto_close_profit_usd: parseFloat(e.target.value) || 0 })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-xs">Cut loss ($)</Label>
+                        <Input
+                          type="number" step="0.5" min="0"
+                          value={riskForm.auto_close_loss_usd}
+                          onChange={(e) => setRiskForm({ ...riskForm, auto_close_loss_usd: parseFloat(e.target.value) || 0 })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-xs">Max age (min)</Label>
+                        <Input
+                          type="number" min="0"
+                          value={riskForm.auto_close_max_age_minutes}
+                          onChange={(e) => setRiskForm({ ...riskForm, auto_close_max_age_minutes: parseInt(e.target.value, 10) || 0 })}
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-slate-500 text-xs">0 disables that rule.</p>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-slate-300">Close trades on reverse signal</Label>
+                      <Switch
+                        checked={riskForm.auto_close_on_reverse}
+                        onCheckedChange={(v) => setRiskForm({ ...riskForm, auto_close_on_reverse: v })}
+                      />
+                    </div>
+                  </div>
+
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
                     Save risk settings
                   </Button>

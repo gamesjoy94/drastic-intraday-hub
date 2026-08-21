@@ -18,11 +18,17 @@ export const useMarketAnalysis = () => {
   // Rate limiting: prevent too frequent API calls
   const RATE_LIMIT_DELAY = 15000; // 15 seconds between calls
 
-  const handleAnalyzeMarket = async (selectedSymbol: string, selectedTimeframe: string) => {
+  const handleAnalyzeMarket = async (
+    selectedSymbol: string,
+    selectedTimeframe: string,
+    options: { silent?: boolean } = {},
+  ) => {
+    const silent = !!options.silent;
     // Rate limiting check
     const now = Date.now();
     if (now - lastAnalysisTime < RATE_LIMIT_DELAY) {
       const remainingTime = Math.ceil((RATE_LIMIT_DELAY - (now - lastAnalysisTime)) / 1000);
+      if (silent) return;
       toast({
         title: "Rate Limited",
         description: `Please wait ${remainingTime} seconds before making another request.`,
@@ -75,7 +81,7 @@ export const useMarketAnalysis = () => {
 
         console.log(`useMarketAnalysis: Analysis completed for ${validTimeframe} timeframe`);
 
-        toast({
+        if (!silent) toast({
           title: "Analysis Complete",
           description: `Gold trading analysis completed for ${validTimeframe} timeframe.`,
         });
@@ -90,7 +96,9 @@ export const useMarketAnalysis = () => {
       const apiError = APIErrorHandler.handleMarketDataError(error);
       
       // Show appropriate error message based on error type
-      if (apiError.code === 'RATE_LIMIT') {
+      if (silent) {
+        console.warn('Silent analysis error:', apiError.message);
+      } else if (apiError.code === 'RATE_LIMIT') {
         toast({
           title: "API Limit Reached",
           description: apiError.message,

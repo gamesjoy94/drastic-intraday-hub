@@ -58,6 +58,17 @@ export interface RiskSettings {
   auto_trading_enabled: boolean;
   require_manual_confirm: boolean;
   kill_switch_engaged: boolean;
+  /** Automation */
+  auto_analysis_enabled: boolean;
+  auto_analysis_interval_minutes: number;
+  auto_confidence_threshold: number;
+  auto_entries_per_signal: number;
+  auto_live_enabled: boolean;
+  auto_manage_enabled: boolean;
+  auto_close_profit_usd: number;
+  auto_close_loss_usd: number;
+  auto_close_max_age_minutes: number;
+  auto_close_on_reverse: boolean;
 }
 
 export interface OrderPlan {
@@ -207,10 +218,10 @@ class MT5ApiService {
     return res.plan;
   }
 
-  async executeOrder(signal: TradeSignal, confirmed: boolean) {
+  async executeOrder(signal: TradeSignal, confirmed: boolean, entryIndex = 0) {
     return invoke<{ executed: boolean; plan: OrderPlan; order: { ticket: string; fillPrice: number } }>(
       'mt5-execute',
-      { ...signal, dedupeKey: buildDedupeKey(signal), confirmed },
+      { ...signal, dedupeKey: buildDedupeKey(signal, entryIndex), confirmed },
     );
   }
 
@@ -274,7 +285,7 @@ class MT5ApiService {
  * Stable key so the same AI signal can never be executed twice, even if the
  * analysis effect re-fires. Rounded to the minute + rounded prices.
  */
-export function buildDedupeKey(signal: TradeSignal): string {
+export function buildDedupeKey(signal: TradeSignal, entryIndex = 0): string {
   const minute = Math.floor(Date.now() / 60000);
   return [
     signal.symbol,
@@ -284,6 +295,7 @@ export function buildDedupeKey(signal: TradeSignal): string {
     (signal.takeProfit ?? 0).toFixed(5),
     Math.round(signal.confidence),
     minute,
+    entryIndex,
   ].join('|');
 }
 

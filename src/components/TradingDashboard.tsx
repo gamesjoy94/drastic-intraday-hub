@@ -6,7 +6,7 @@ import MainContent from './MainContent';
 import RightPanel from './RightPanel';
 import MobileAnalysisSheet from './MobileAnalysisSheet';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMarketAnalysis } from '@/hooks/useMarketAnalysis';
+import { useMarketAnalysisWithTrading } from '@/hooks/useMarketAnalysisWithTrading';
 
 const TradingDashboard = () => {
   // Fixed to XAUUSD but now support multiple timeframes
@@ -25,8 +25,10 @@ const TradingDashboard = () => {
     isAnalyzing,
     connectionError,
     handleAnalyzeMarket,
-    handleRetryConnection
-  } = useMarketAnalysis();
+    handleRetryConnection,
+    autoAnalysisEnabled,
+    autoIntervalMinutes,
+  } = useMarketAnalysisWithTrading(selectedTimeframe);
 
   const handleAnalyze = () => {
     console.log(`TradingDashboard: Initiating analysis for ${selectedSymbol} on ${selectedTimeframe} timeframe`);
@@ -72,6 +74,12 @@ const TradingDashboard = () => {
             onTimeframeChange={handleTimeframeChange}
           />
           
+          {autoAnalysisEnabled && (
+            <div className="px-4 py-1 text-xs text-emerald-400 bg-slate-900 border-b border-slate-800">
+              Auto analysis running every {autoIntervalMinutes} min — signals above the confidence threshold are traded automatically.
+            </div>
+          )}
+
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
             {/* Main Chart Section */}
             <MainContent
